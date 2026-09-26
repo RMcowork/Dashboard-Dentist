@@ -33,7 +33,7 @@ export function renderMarket(root, market, { region }, mode = 'static') {
   const updated = [...searchTrends, ...competitors].map((x) => x.updated).filter(Boolean).sort().at(-1);
   root.querySelector('#market-source').textContent = [
     t(market.source === 'airtable' ? 'market.sourceLive' : 'market.sourceDemo'),
-    updated ? t('market.updated', { ago: fmtAgo((Date.now() - Date.parse(updated)) / 1000) }) : '',
+    updated && market.source === 'airtable' ? t('market.updated', { ago: fmtAgo((Date.now() - Date.parse(updated)) / 1000) }) : '',
   ].filter(Boolean).join(' · ');
   const note = root.querySelector('#market-note');
   const empty = market.source === 'airtable' && !searchTrends.length && !competitors.length;
