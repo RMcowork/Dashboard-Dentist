@@ -2,6 +2,9 @@
 
 ## 2026-09-26
 
+### Docs
+- Added `docs/BENEFITS.md`: what the dashboard does for the owner and the front desk.
+
 ### Phone layout
 - Compact two-row header and a bottom tab bar on screens up to 600 px.
 - Front desk on phones: swipeable day counters and a time-ordered agenda with a *Now* divider, instead of the sideways-scrolling chair grid.

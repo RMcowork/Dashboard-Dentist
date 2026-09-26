@@ -12,6 +12,8 @@ A dashboard for a small dental clinic, in English, עברית and العربية
 - **Works on phones**: compact header, bottom tab bar, swipeable counters, agenda view
 - Light and dark themes; right-to-left layout for Hebrew and Arabic
 
+**Why a clinic would use it:** the owner gets a clear picture of the business, and the reception gets a practical to-do list for the day (confirmations, balances to collect, recalls), both from the same up-to-date data. See [docs/BENEFITS.md](docs/BENEFITS.md).
+
 It runs on generated **demo data** out of the box, and reads from **Airtable** when configured.
 
 **Live demo:** <https://rmcowork.github.io/Dashboard-Dentist/>. It runs entirely in your browser; click **Connect Airtable** to read a base with your own read-only token.
@@ -60,6 +62,7 @@ npm test
 | File | What's in it |
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | Orientation for contributors and Claude: layout, data contract, rules |
+| [docs/BENEFITS.md](docs/BENEFITS.md) | What the dashboard does for the owner and the front desk |
 | [docs/SPEC.md](docs/SPEC.md) | Product spec: users, screens, exact KPI formulas, roadmap |
 | [docs/PRACTICE.md](docs/PRACTICE.md) | Engineering practice: style, adapters, secrets, privacy, i18n/RTL, charts, testing |
 | [docs/AIRTABLE.md](docs/AIRTABLE.md) | Base schema, tokens, sync & free-plan limits, GitHub Pages connection, real data |
