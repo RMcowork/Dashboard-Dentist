@@ -1,56 +1,190 @@
-// Entry point: loads data from /api/data, owns UI state, wires controls, re-renders on change.
+// Entry point: owns UI state, the refresh cycle (fetch → loading animation → render), and controls.
 
 import { addDays, todayStr } from './dates.js';
-import { LANGS, savedLang, setLang, t } from './i18n.js';
+import { LANGS, fmtAgo, fmtDate, fmtDuration, fmtNum, savedLang, setLang, t } from './i18n.js';
 import { PRESETS, presetRange, renderOverview } from './overview.js';
 import { renderToday } from './today.js';
+import { icon } from './icons.js';
 
-const REFRESH_MS = 60_000;
+const INTERVALS = [0, 15, 30, 60, 120, 300, 900]; // seconds; 0 = off
+const DEFAULT_INTERVAL = 60;
+const MIN_LOADING_MS = 900; // every refresh visibly "loads", even when the data is instant
+const STORE = { interval: 'dental-dash.refresh', theme: 'dental-dash.theme' };
 
 const state = {
   data: null,
   source: null,
+  sync: null,
+  airtableConfigured: false,
   tab: location.hash === '#today' ? 'today' : 'overview',
   preset: '28d',
   range: presetRange('28d', todayStr()),
   day: todayStr(),
+  interval: readInterval(),
+  lastSyncAt: null,
+  nextAt: null,
+  loading: false,
+  failed: false,
+  changedIds: new Set(),
 };
 
 const $ = (sel) => document.querySelector(sel);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function loadData() {
-  const res = await fetch('/api/data');
+function readInterval() {
+  try {
+    const raw = localStorage.getItem(STORE.interval);
+    if (raw !== null && INTERVALS.includes(Number(raw))) return Number(raw);
+  } catch { /* storage unavailable */ }
+  return DEFAULT_INTERVAL;
+}
+function writeStore(key, value) {
+  try { localStorage.setItem(key, String(value)); } catch { /* storage unavailable */ }
+}
+
+// ---------- data ----------
+
+async function fetchData(force) {
+  const res = await fetch(`/api/data${force ? '?force=1' : ''}`, { cache: 'no-store' });
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || res.statusText);
   // Chairs define dentist order, which fixes each dentist's colour slot everywhere.
   body.data.dentists.sort((a, b) => (a.chair ?? 99) - (b.chair ?? 99));
-  state.data = body.data;
-  state.source = body.source;
+  return body;
 }
 
-function render() {
-  if (!state.data) return;
-  $('#status-msg').hidden = true;
-  const badge = $('#source-badge');
-  badge.hidden = false;
-  badge.textContent = t(`source.${state.source}`);
-  badge.dataset.source = state.source;
+// Appointments whose status or payment changed, or that are new, since the previous data.
+function diffAppointments(before, after) {
+  const changed = new Set();
+  if (!before) return changed;
+  const old = new Map(before.appointments.map((a) => [a.id, a]));
+  for (const a of after.appointments) {
+    const o = old.get(a.id);
+    if (!o || o.status !== a.status || o.paid !== a.paid || o.date !== a.date || o.start !== a.start) changed.add(a.id);
+  }
+  return changed;
+}
 
+// One refresh cycle: show loading state for at least MIN_LOADING_MS, then render with animations.
+async function refresh({ manual = false } = {}) {
+  if (state.loading) return;
+  state.loading = true;
+  clearTimeout(refresh.timer);
+  document.body.classList.add('is-loading');
+  setSyncState('syncing');
+  const firstLoad = !state.data;
+  try {
+    const [body] = await Promise.all([fetchData(manual), sleep(MIN_LOADING_MS)]);
+    state.changedIds = diffAppointments(state.data, body.data);
+    Object.assign(state, {
+      data: body.data, source: body.source, sync: body.sync, airtableConfigured: body.airtableConfigured,
+      lastSyncAt: Date.now(), failed: body.sync?.mode === 'stale',
+    });
+    document.body.classList.remove('is-loading', 'is-first-load');
+    render(firstLoad ? 'intro' : 'refresh');
+    setSyncState(state.failed ? 'offline' : 'live');
+    if (state.failed) toast(t('toast.error'), 'warn');
+    else if (!firstLoad) toast(t('toast.synced'), 'ok', state.changedIds.size ? t('toast.changes', { n: fmtNum(state.changedIds.size) }) : t('toast.noChanges'));
+  } catch (err) {
+    document.body.classList.remove('is-loading');
+    state.failed = true;
+    setSyncState('offline');
+    if (firstLoad) {
+      const msg = $('#status-msg');
+      msg.hidden = false;
+      msg.textContent = t('error.load', { message: err.message });
+    } else {
+      toast(t('toast.error'), 'warn');
+    }
+  } finally {
+    state.loading = false;
+    schedule();
+  }
+}
+
+function schedule() {
+  clearTimeout(refresh.timer);
+  state.nextAt = state.interval ? Date.now() + state.interval * 1000 : null;
+  if (state.interval) refresh.timer = setTimeout(() => refresh(), state.interval * 1000);
+}
+
+// ---------- render ----------
+
+function render(mode = 'static') {
+  renderChrome();
+  if (!state.data) return;
   for (const btn of document.querySelectorAll('[role="tab"]')) {
     const active = btn.dataset.tab === state.tab;
     btn.setAttribute('aria-selected', String(active));
     btn.tabIndex = active ? 0 : -1;
     $(`#${btn.dataset.tab}`).hidden = !active;
   }
-  if (state.tab === 'overview') renderOverview($('#overview'), state.data, state.range);
-  else renderToday($('#today'), state.data, state.day);
+  $('#overview-controls').hidden = state.tab !== 'overview';
+  if (state.tab === 'overview') renderOverview($('#overview'), state.data, state.range, mode);
+  else renderToday($('#today'), state.data, state.day, { changedIds: mode === 'refresh' ? state.changedIds : new Set() });
+  const panel = $(`#${state.tab}`);
+  panel.classList.remove('enter');
+  void panel.offsetWidth; // restart the entrance animation
+  panel.classList.add('enter');
 }
+
+function renderChrome() {
+  const hour = new Date().getHours();
+  $('#greeting').textContent = t(hour < 12 ? 'greet.morning' : hour < 18 ? 'greet.afternoon' : 'greet.evening');
+  $('#today-date').textContent = fmtDate(todayStr(), 'long');
+  if (state.source) {
+    const badge = $('#source-badge');
+    badge.hidden = false;
+    badge.dataset.source = state.source;
+    $('#source-text').textContent = t(`source.${state.source}`);
+    badge.title = state.sync?.apiCallsTotal != null ? `Airtable API calls since server start: ${state.sync.apiCallsTotal}` : '';
+  }
+  $('#demo-banner').hidden = state.source !== 'demo' || state.airtableConfigured;
+}
+
+function setSyncState(s) {
+  const el = $('#sync');
+  el.dataset.state = state.interval || s !== 'live' ? s : 'paused';
+  $('#sync-state').textContent = t(`sync.${el.dataset.state}`);
+  tick();
+}
+
+// Once a second: "Updated 12 s ago" + the countdown ring to the next refresh.
+function tick() {
+  $('#sync-ago').textContent = state.lastSyncAt && !state.loading
+    ? t('sync.updated', { ago: fmtAgo((Date.now() - state.lastSyncAt) / 1000) }) : '';
+  const ring = $('#ring');
+  if (state.nextAt && !state.loading) {
+    const left = Math.max(0, state.nextAt - Date.now());
+    ring.style.strokeDashoffset = String(100 - (left / (state.interval * 1000)) * 100);
+    $('#sync').title = t('sync.next', { s: fmtDuration(Math.ceil(left / 1000)) });
+  } else {
+    ring.style.strokeDashoffset = state.loading ? '0' : '100';
+    $('#sync').title = '';
+  }
+}
+
+let toastTimer;
+function toast(title, kind = 'ok', detail = '') {
+  const el = $('#toast');
+  el.className = `toast show ${kind}`;
+  el.innerHTML = `<span class="toast-dot"></span><strong></strong>${detail ? '<span class="toast-detail"></span>' : ''}`;
+  el.querySelector('strong').textContent = title;
+  if (detail) el.querySelector('.toast-detail').textContent = detail;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ---------- controls ----------
 
 function fillSelects() {
   $('#lang-select').innerHTML = Object.entries(LANGS)
     .map(([code, l]) => `<option value="${code}" lang="${code}">${l.label}</option>`).join('');
   $('#range-preset').innerHTML = PRESETS.map((p) => `<option value="${p}">${t(`range.${p}`)}</option>`).join('');
   $('#range-preset').value = state.preset;
+  $('#refresh-interval').innerHTML = INTERVALS
+    .map((s) => `<option value="${s}">${s ? fmtDuration(s) : t('sync.off')}</option>`).join('');
+  $('#refresh-interval').value = String(state.interval);
 }
 
 function syncRangeInputs() {
@@ -59,35 +193,62 @@ function syncRangeInputs() {
   $('#range-to').value = state.range.to;
 }
 
+function applyTheme(theme) {
+  if (theme) document.documentElement.dataset.theme = theme;
+  else delete document.documentElement.dataset.theme;
+}
+
+function isDark() {
+  const th = document.documentElement.dataset.theme;
+  return th ? th === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
 function wire() {
+  for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = icon(el.dataset.icon);
+
   $('#lang-select').addEventListener('change', async (e) => {
     const code = e.target.value;
     await setLang(code);
     fillSelects();
     $('#lang-select').value = code;
-    render();
+    setSyncState($('#sync').dataset.state === 'paused' ? 'live' : $('#sync').dataset.state);
+    render('static');
   });
 
   for (const btn of document.querySelectorAll('[role="tab"]')) {
     btn.addEventListener('click', () => {
       state.tab = btn.dataset.tab;
       history.replaceState(null, '', state.tab === 'today' ? '#today' : '#');
-      render();
+      render('static');
     });
   }
-  // Arrow keys move between tabs (respecting reading direction)
   $('.tabs').addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    const next = document.querySelector(`[role="tab"]:not([aria-selected="true"])`);
+    const next = document.querySelector('[role="tab"]:not([aria-selected="true"])');
     next.focus();
     next.click();
+  });
+
+  $('#refresh-interval').addEventListener('change', (e) => {
+    state.interval = Number(e.target.value);
+    writeStore(STORE.interval, state.interval);
+    schedule();
+    if (!state.loading) setSyncState(state.failed ? 'offline' : 'live');
+  });
+  $('#refresh-now').addEventListener('click', () => refresh({ manual: true }));
+
+  $('#theme-toggle').addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
+    applyTheme(next);
+    writeStore(STORE.theme, next);
+    render('static');
   });
 
   $('#range-preset').addEventListener('change', (e) => {
     state.preset = e.target.value;
     if (state.preset !== 'custom') state.range = presetRange(state.preset, todayStr());
     syncRangeInputs();
-    render();
+    render('static');
   });
   for (const id of ['#range-from', '#range-to']) {
     $(id).addEventListener('change', () => {
@@ -95,15 +256,15 @@ function wire() {
       const to = $('#range-to').value;
       if (from && to && from <= to) {
         state.range = { from, to };
-        render();
+        render('static');
       }
     });
   }
 
-  $('#day-prev').addEventListener('click', () => { state.day = addDays(state.day, -1); render(); });
-  $('#day-next').addEventListener('click', () => { state.day = addDays(state.day, 1); render(); });
-  $('#day-today').addEventListener('click', () => { state.day = todayStr(); render(); });
-  $('#day-input').addEventListener('change', (e) => { if (e.target.value) { state.day = e.target.value; render(); } });
+  $('#day-prev').addEventListener('click', () => { state.day = addDays(state.day, -1); render('static'); });
+  $('#day-next').addEventListener('click', () => { state.day = addDays(state.day, 1); render('static'); });
+  $('#day-today').addEventListener('click', () => { state.day = todayStr(); render('static'); });
+  $('#day-input').addEventListener('change', (e) => { if (e.target.value) { state.day = e.target.value; render('static'); } });
 
   // Chart/table toggle on each chart card
   for (const card of document.querySelectorAll('.chart-card')) {
@@ -117,20 +278,17 @@ function wire() {
     });
   }
 
-  // Charts read colours from CSS tokens, so re-render when the colour scheme flips
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
-}
+  // Charts read colours from CSS tokens, so re-render when the OS colour scheme flips
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render('static'));
 
-async function refresh() {
-  try {
-    await loadData();
-    render();
-  } catch (err) {
-    const msg = $('#status-msg');
-    msg.hidden = false;
-    msg.classList.add('error');
-    msg.textContent = t('error.load', { message: err.message });
-  }
+  // Don't spend API calls on a hidden tab; catch up as soon as it's visible again
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearTimeout(refresh.timer);
+    else if (state.interval && state.nextAt && Date.now() >= state.nextAt) refresh();
+    else schedule();
+  });
+
+  setInterval(tick, 1000);
 }
 
 async function init() {
@@ -139,9 +297,8 @@ async function init() {
   $('#lang-select').value = savedLang();
   syncRangeInputs();
   wire();
+  renderChrome();
   await refresh();
-  // Keep the front desk live; the overview doesn't need it but a refresh is cheap.
-  setInterval(refresh, REFRESH_MS);
 }
 
 // Chart.js is a deferred classic script; wait for it before the first render.

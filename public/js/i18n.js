@@ -91,3 +91,15 @@ export function fmtDate(str, style = 'short') {
 export function treatmentName(trt) {
   return trt?.name?.[lang] || trt?.name?.en || '—';
 }
+
+// "12 seconds ago" / "לפני 12 שניות" / "قبل 12 ثانية"
+export function fmtAgo(seconds) {
+  const rtf = new Intl.RelativeTimeFormat(loc(), { numeric: 'auto', style: 'long' });
+  return seconds < 60 ? rtf.format(-Math.max(0, Math.round(seconds)), 'second') : rtf.format(-Math.round(seconds / 60), 'minute');
+}
+
+// Interval labels: "15 sec", "1 min" in the active locale.
+export function fmtDuration(seconds) {
+  const [value, unit] = seconds < 60 ? [seconds, 'second'] : [seconds / 60, 'minute'];
+  return new Intl.NumberFormat(loc(), { style: 'unit', unit, unitDisplay: 'short' }).format(value);
+}

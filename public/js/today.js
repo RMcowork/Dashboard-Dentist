@@ -3,13 +3,15 @@
 import { CLINIC_HOURS, minToTime, nextOpenDay, timeToMin, todayStr, weekday } from './dates.js';
 import { dayAppointments, dayCounts, recallsDue, RECALL_MONTHS, unpaidBalances } from './metrics.js';
 import { fmtDate, fmtMoney, fmtNum, t, treatmentName } from './i18n.js';
-import { esc } from './dom.js';
+import { esc, initials } from './dom.js';
+import { icon } from './icons.js';
 
 const SLOT_MIN = 15;
 const LIST_LIMIT = 8;
 const STATUS_ICON = { scheduled: '○', checked_in: '◐', in_chair: '●', completed: '✓', no_show: '✕', cancelled: '–' };
 
-export function renderToday(root, data, day) {
+// changedIds: appointments that changed in the last sync — flashed once so staff notice them.
+export function renderToday(root, data, day, { changedIds = new Set() } = {}) {
   const lookups = {
     patient: new Map(data.patients.map((p) => [p.id, p])),
     treatment: new Map(data.treatments.map((x) => [x.id, x])),
@@ -24,15 +26,15 @@ export function renderToday(root, data, day) {
   root.querySelector('#day-counts').innerHTML = [
     ['booked', counts.booked], ['arrived', counts.arrived], ['inChair', counts.inChair],
     ['done', counts.done], ['noShow', counts.noShow],
-  ].map(([k, n]) => `<div class="count count-${k}"><span class="count-n">${fmtNum(n)}</span><span class="count-l">${esc(t(`count.${k}`))}</span></div>`).join('');
+  ].map(([k, n], i) => `<div class="count count-${k}" style="--i:${i}"><span class="count-dot" aria-hidden="true"></span><span class="count-n">${fmtNum(n)}</span><span class="count-l">${esc(t(`count.${k}`))}</span></div>`).join('');
 
-  renderSchedule(root.querySelector('#schedule'), data, day, appts, lookups);
+  renderSchedule(root.querySelector('#schedule'), data, day, appts, lookups, changedIds);
   renderTomorrow(root.querySelector('#tomorrow'), data, day, lookups);
   renderUnpaid(root.querySelector('#unpaid'), data, day);
   renderRecalls(root.querySelector('#recalls'), data, day);
 }
 
-function renderSchedule(box, data, day, appts, { patient, treatment, dentist }) {
+function renderSchedule(box, data, day, appts, { patient, treatment, dentist }, changedIds) {
   const hours = CLINIC_HOURS[weekday(day)];
   if (!hours) {
     box.innerHTML = `<p class="empty">${esc(t('today.closed'))}</p>`;
@@ -46,8 +48,8 @@ function renderSchedule(box, data, day, appts, { patient, treatment, dentist }) 
 
   const header = `<div class="sch-corner"></div>${chairs.map((c, i) => {
     const d = dentistOfChair.get(c);
-    return `<div class="sch-head" style="grid-column:${i + 2}"><strong>${esc(t('today.chair', { n: c }))}</strong>
-      <span class="muted small"><span class="swatch" style="background:var(--series-${(d?.slot ?? 0) + 1})"></span>${esc(d?.name ?? '')}</span></div>`;
+    return `<div class="sch-head" style="grid-column:${i + 2}"><span class="avatar sm" style="--c:var(--series-${(d?.slot ?? 0) + 1})">${esc(initials(d?.name ?? '?'))}</span>
+      <span class="sch-head-text"><strong>${esc(t('today.chair', { n: c }))}</strong><span class="muted small">${esc(d?.name ?? '')}</span></span></div>`;
   }).join('')}`;
 
   const times = [];
@@ -59,7 +61,7 @@ function renderSchedule(box, data, day, appts, { patient, treatment, dentist }) 
     const den = dentist.get(a.dentistId);
     const pat = patient.get(a.patientId);
     const span = Math.max(1, Math.round(a.duration / SLOT_MIN));
-    return `<div class="appt status-${a.status}" style="grid-row:${row(start)} / span ${span}; grid-column:${col}; --dentist:var(--series-${(den?.slot ?? 0) + 1})"
+    return `<div class="appt status-${a.status}${changedIds.has(a.id) ? ' flash' : ''}" style="grid-row:${row(start)} / span ${span}; grid-column:${col}; --dentist:var(--series-${(den?.slot ?? 0) + 1})"
         title="${esc(`${a.start} · ${pat?.name ?? ''} · ${treatmentName(treatment.get(a.treatmentId))} · ${t(`status.${a.status}`)}`)}">
       <div class="appt-top"><span class="appt-time">${esc(a.start)}</span>
         <span class="chip chip-${a.status}"><span aria-hidden="true">${STATUS_ICON[a.status]}</span> ${esc(t(`status.${a.status}`))}</span></div>
@@ -92,7 +94,7 @@ function renderTomorrow(box, data, day, { patient, treatment, dentist }) {
       </tr></thead><tbody>${appts.map((a) => {
         const p = patient.get(a.patientId);
         return `<tr><td class="num">${esc(a.start)}</td><th scope="row">${esc(p?.name)}</th>
-          <td><a href="tel:${esc(p?.phone)}" dir="ltr">${esc(p?.phone)}</a></td>
+          <td><a class="tel" href="tel:${esc(p?.phone)}" dir="ltr">${icon('phone', { size: 13 })}${esc(p?.phone)}</a></td>
           <td>${esc(treatmentName(treatment.get(a.treatmentId)))}</td><td>${esc(dentist.get(a.dentistId)?.name)}</td></tr>`;
       }).join('')}</tbody></table>`
     : `<p class="empty">${esc(t('today.noAppointments'))}</p>`;

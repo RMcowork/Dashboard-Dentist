@@ -1,6 +1,6 @@
 // Static file server for public/ plus a small JSON API.
-//   GET /api/data  -> { source, data: { dentists, treatments, patients, appointments } }
-// The data source is chosen by DATA_SOURCE (demo | airtable).
+//   GET /api/data[?force=1] -> { source, airtableConfigured, sync, data: { dentists, treatments, patients, appointments } }
+// The data source is chosen by DATA_SOURCE: demo | airtable | auto (default: airtable when a token is set).
 
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -14,8 +14,10 @@ loadEnv();
 const ADAPTERS = { demo, airtable };
 const PUBLIC = join(ROOT, 'public');
 const PORT = Number(process.env.PORT) || 8940;
-const adapter = ADAPTERS[process.env.DATA_SOURCE || 'demo'];
-if (!adapter) throw new Error(`Unknown DATA_SOURCE "${process.env.DATA_SOURCE}". Use one of: ${Object.keys(ADAPTERS).join(', ')}`);
+const airtableConfigured = Boolean(process.env.AIRTABLE_TOKEN && process.env.AIRTABLE_BASE_ID);
+const requested = process.env.DATA_SOURCE || 'auto';
+const adapter = requested === 'auto' ? (airtableConfigured ? airtable : demo) : ADAPTERS[requested];
+if (!adapter) throw new Error(`Unknown DATA_SOURCE "${requested}". Use one of: auto, ${Object.keys(ADAPTERS).join(', ')}`);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -30,10 +32,11 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-async function handleApi(req, res, path) {
+async function handleApi(req, res, path, query) {
   if (path === '/api/data') {
     try {
-      sendJson(res, 200, { source: adapter.name, data: await adapter.getData() });
+      const { data, sync } = await adapter.getData({ force: query.get('force') === '1' });
+      sendJson(res, 200, { source: adapter.name, airtableConfigured, sync, data });
     } catch (err) {
       console.error(err);
       sendJson(res, 502, { error: err.message });
@@ -61,8 +64,9 @@ async function handleStatic(res, path) {
 }
 
 http.createServer((req, res) => {
-  const path = decodeURIComponent(req.url.split('?')[0]);
-  if (path.startsWith('/api/')) handleApi(req, res, path);
+  const url = new URL(req.url, 'http://localhost');
+  const path = decodeURIComponent(url.pathname);
+  if (path.startsWith('/api/')) handleApi(req, res, path, url.searchParams);
   else handleStatic(res, path);
 }).listen(PORT, () => {
   console.log(`Dental dashboard (${adapter.name} data) at http://localhost:${PORT}`);

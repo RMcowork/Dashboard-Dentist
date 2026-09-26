@@ -23,15 +23,14 @@ Then open <http://localhost:8940>.
 The demo's "today" follows your clock. The clinic is closed on Saturdays, so use the day picker to view a weekday.
 
 ## Using Airtable
-The *Dental Clinic Demo* base already exists. To fill it and read from it:
+The *Dental Clinic Demo* base (`appTRu3aSv38OmmGV`) already exists and holds the demo data. To read from it:
 
-1. Create an Airtable personal access token with the scopes listed in [docs/AIRTABLE.md](docs/AIRTABLE.md), and put it in `.env` as `AIRTABLE_TOKEN`.
-2. Generate the data and upload it:
-   ```bash
-   npm run generate
-   npm run seed
-   ```
-3. Set `DATA_SOURCE=airtable` in `.env` and run `npm start` again.
+1. Create a **read-only** personal access token at <https://airtable.com/create/tokens>: scope `data.records:read`, access limited to *Dental Clinic Demo*.
+2. Paste it into `.env` as `AIRTABLE_TOKEN=`, then restart `npm start`.
+
+With `DATA_SOURCE=auto` (the default), the server switches to Airtable by itself and the badge reads **Airtable · live**. Without a token it serves demo data and shows a banner.
+
+The dashboard auto-refreshes every minute by default. Use the selector in the top bar to choose Off, 15 s, 30 s, 1, 2, 5 or 15 min. The ↻ button refreshes now.
 
 To use a real clinic's data, see "Connecting a real clinic base" in [docs/AIRTABLE.md](docs/AIRTABLE.md).
 

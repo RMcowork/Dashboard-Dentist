@@ -4,97 +4,140 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dental Clinic Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232a78d6'/%3E%3Cstop offset='1' stop-color='%231baf7a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M7 3C4.5 3 3 5 3 7.5c0 2 .8 3.4 1.5 5 .8 1.9 1 4 1.5 6.5.3 1.5 1 2 1.7 2 1 0 1.3-1 1.6-2.5.4-2 .9-3.5 2.7-3.5s2.3 1.5 2.7 3.5c.3 1.5.6 2.5 1.6 2.5.7 0 1.4-.5 1.7-2 .5-2.5.7-4.6 1.5-6.5.7-1.6 1.5-3 1.5-5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3Z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Rubik:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
+<script>
+  // Apply the saved theme before first paint (no flash).
+  try { const th = localStorage.getItem('dental-dash.theme'); if (th) document.documentElement.dataset.theme = th; } catch {}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
 <script type="module" src="js/app.js"></script>
 </head>
-<body>
-<header class="topbar">
-  <div class="brand">
-    <h1 data-i18n="app.title">Dental Clinic Dashboard</h1>
-    <p class="muted" data-i18n="app.subtitle">Practice overview and front desk</p>
+<body class="is-loading is-first-load">
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand">
+      <span class="logo" data-icon="tooth"></span>
+      <div class="brand-text">
+        <span class="brand-name" data-i18n="clinic.name">Smile Dental Clinic</span>
+        <span class="brand-sub" data-i18n="app.title">Dental Clinic Dashboard</span>
+      </div>
+    </div>
+
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-overview" aria-controls="overview" data-tab="overview"><span data-icon="overview"></span><span data-i18n="tab.overview">Overview</span></button>
+      <button role="tab" id="tab-today" aria-controls="today" data-tab="today"><span data-icon="today"></span><span data-i18n="tab.today">Front desk</span></button>
+    </nav>
+
+    <div class="actions">
+      <div class="sync" id="sync" data-state="syncing">
+        <span class="sync-dot" aria-hidden="true"></span>
+        <span class="sync-text">
+          <span class="sync-state" id="sync-state">Syncing…</span>
+          <span class="sync-ago" id="sync-ago"></span>
+        </span>
+        <svg class="ring" viewBox="0 0 20 20" aria-hidden="true"><circle class="ring-bg" cx="10" cy="10" r="8"/><circle class="ring-fg" id="ring" cx="10" cy="10" r="8" pathLength="100"/></svg>
+        <label class="visually-hidden" for="refresh-interval" data-i18n="sync.every">Auto-refresh</label>
+        <select id="refresh-interval" class="bare-select" data-i18n-aria="sync.every"></select>
+        <button type="button" id="refresh-now" class="icon-btn ghost" data-i18n-aria="sync.refreshNow" data-icon="refresh"></button>
+      </div>
+      <span id="source-badge" class="badge" hidden><span data-icon="database"></span><span id="source-text"></span></span>
+      <label class="visually-hidden" for="lang-select" data-i18n="lang.label">Language</label>
+      <select id="lang-select" class="pill-select" data-i18n-aria="lang.label"></select>
+      <button type="button" id="theme-toggle" class="icon-btn" data-i18n-aria="theme.toggle"><span class="i-sun" data-icon="sun"></span><span class="i-moon" data-icon="moon"></span></button>
+    </div>
   </div>
-  <div class="topbar-controls">
-    <span id="source-badge" class="badge" hidden></span>
-    <label class="field">
-      <span class="visually-hidden" data-i18n="lang.label">Language</span>
-      <select id="lang-select" data-i18n-aria="lang.label"></select>
-    </label>
-  </div>
-  <nav class="tabs" role="tablist">
-    <button role="tab" id="tab-overview" aria-controls="overview" data-tab="overview" data-i18n="tab.overview">Overview</button>
-    <button role="tab" id="tab-today" aria-controls="today" data-tab="today" data-i18n="tab.today">Front desk</button>
-  </nav>
 </header>
 
 <main>
-  <p id="status-msg" class="status-msg" role="status" data-i18n="loading">Loading…</p>
+  <div id="demo-banner" class="banner" hidden><span data-icon="bell"></span><span data-i18n="banner.demo"></span></div>
 
-  <!-- ===== Overview (owner / manager) ===== -->
-  <section id="overview" role="tabpanel" aria-labelledby="tab-overview" hidden>
-    <div class="filters">
+  <section class="hero">
+    <div>
+      <p class="eyebrow" id="today-date"></p>
+      <h1 id="greeting"></h1>
+    </div>
+    <div class="hero-controls" id="overview-controls">
       <label class="field">
         <span data-i18n="range.label">Period</span>
-        <select id="range-preset"></select>
+        <select id="range-preset" class="pill-select"></select>
       </label>
       <div id="custom-range" class="custom-range" hidden>
         <label class="field"><span data-i18n="range.from">From</span><input type="date" id="range-from"></label>
         <label class="field"><span data-i18n="range.to">To</span><input type="date" id="range-to"></label>
       </div>
-      <span id="range-compare" class="muted"></span>
+      <span id="range-compare" class="compare"></span>
+    </div>
+  </section>
+
+  <p id="status-msg" class="status-msg error" role="status" hidden></p>
+
+  <!-- ===== Overview (owner / manager) ===== -->
+  <section id="overview" class="panel" role="tabpanel" aria-labelledby="tab-overview">
+    <div id="kpi-grid" class="kpi-grid">
+      <article class="kpi skeleton"></article><article class="kpi skeleton"></article><article class="kpi skeleton"></article><article class="kpi skeleton"></article>
+      <article class="kpi skeleton"></article><article class="kpi skeleton"></article><article class="kpi skeleton"></article><article class="kpi skeleton"></article>
     </div>
 
-    <div id="kpi-grid" class="kpi-grid"></div>
-
+    <h2 class="section-title" data-i18n="section.trends">Trends</h2>
     <div class="chart-grid">
       <article class="card chart-card wide" data-chart="revenue">
         <header class="card-head">
-          <div><h2 data-i18n="chart.revenueTrend">Revenue over time</h2><p class="muted small unit-note"></p></div>
-          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
+          <div><h3 data-i18n="chart.revenueTrend">Revenue over time</h3><p class="card-sub unit-note"></p></div>
+          <button class="toggle-table chip-btn" type="button" data-i18n="chart.showTable">Table</button>
         </header>
-        <div class="chart-box"><canvas></canvas></div>
+        <div class="chart-box tall"><canvas></canvas></div>
         <div class="table-box" hidden><table class="data-table"></table></div>
       </article>
       <article class="card chart-card" data-chart="mix">
         <header class="card-head">
-          <div><h2 data-i18n="chart.categoryMix">Revenue by treatment category</h2></div>
-          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
+          <div><h3 data-i18n="chart.categoryMix">Revenue by treatment category</h3></div>
+          <button class="toggle-table chip-btn" type="button" data-i18n="chart.showTable">Table</button>
         </header>
         <div class="chart-box"><canvas></canvas></div>
         <div class="table-box" hidden><table class="data-table"></table></div>
       </article>
-      <article class="card chart-card" data-chart="dentists">
+      <article class="card chart-card" data-chart="noshow">
         <header class="card-head">
-          <div><h2 data-i18n="chart.byDentist">Revenue by dentist</h2></div>
-          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
-        </header>
-        <div class="chart-box short"><canvas></canvas></div>
-        <div class="table-box" hidden><table class="data-table"></table></div>
-      </article>
-      <article class="card chart-card wide" data-chart="noshow">
-        <header class="card-head">
-          <div><h2 data-i18n="chart.noShowTrend">No-show rate over time</h2><p class="muted small unit-note"></p></div>
-          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
+          <div><h3 data-i18n="chart.noShowTrend">No-show rate over time</h3><p class="card-sub unit-note"></p></div>
+          <button class="toggle-table chip-btn" type="button" data-i18n="chart.showTable">Table</button>
         </header>
         <div class="chart-box"><canvas></canvas></div>
         <div class="table-box" hidden><table class="data-table"></table></div>
       </article>
     </div>
 
-    <article class="card">
-      <h2 data-i18n="table.dentists">Dentist performance</h2>
-      <div class="table-scroll"><table id="dentist-table" class="data-table"></table></div>
-    </article>
+    <h2 class="section-title" data-i18n="section.team">Team</h2>
+    <div class="team-grid">
+      <article class="card chart-card" data-chart="dentists">
+        <header class="card-head">
+          <div><h3 data-i18n="chart.byDentist">Revenue by dentist</h3></div>
+          <button class="toggle-table chip-btn" type="button" data-i18n="chart.showTable">Table</button>
+        </header>
+        <div class="chart-box short"><canvas></canvas></div>
+        <div class="table-box" hidden><table class="data-table"></table></div>
+      </article>
+      <article class="card">
+        <header class="card-head"><h3 data-i18n="table.dentists">Dentist performance</h3></header>
+        <div class="table-scroll"><table id="dentist-table" class="data-table"></table></div>
+      </article>
+    </div>
   </section>
 
   <!-- ===== Front desk ===== -->
-  <section id="today" role="tabpanel" aria-labelledby="tab-today" hidden>
-    <div class="filters day-nav">
-      <button type="button" id="day-prev" class="icon-btn" data-i18n-aria="today.prev"><span class="flip" aria-hidden="true">‹</span></button>
-      <input type="date" id="day-input" data-i18n-aria="today.day">
-      <button type="button" id="day-next" class="icon-btn" data-i18n-aria="today.next"><span class="flip" aria-hidden="true">›</span></button>
-      <button type="button" id="day-today" data-i18n="today.today">Today</button>
+  <section id="today" class="panel" role="tabpanel" aria-labelledby="tab-today" hidden>
+    <div class="day-nav">
+      <div class="day-stepper">
+        <button type="button" id="day-prev" class="icon-btn" data-i18n-aria="today.prev"><span class="flip" data-icon="chevronLeft"></span></button>
+        <input type="date" id="day-input" data-i18n-aria="today.day">
+        <button type="button" id="day-next" class="icon-btn" data-i18n-aria="today.next"><span class="flip" data-icon="chevronRight"></span></button>
+      </div>
+      <button type="button" id="day-today" class="chip-btn" data-i18n="today.today">Today</button>
       <h2 id="day-label" class="day-label"></h2>
     </div>
 
@@ -102,26 +145,27 @@
 
     <div class="today-grid">
       <article class="card schedule-card">
-        <h2 data-i18n="today.schedule">Schedule</h2>
+        <header class="card-head"><h3 data-i18n="today.schedule">Schedule</h3></header>
         <div id="schedule"></div>
       </article>
       <div class="side-lists">
         <article class="card" id="unpaid">
-          <h3 data-i18n="today.unpaid">Unpaid balances</h3>
+          <header class="card-head"><h3 data-i18n="today.unpaid">Unpaid balances</h3></header>
           <div class="list-body"></div>
         </article>
         <article class="card" id="recalls">
-          <h3 data-i18n="today.recalls">Recalls due</h3>
-          <p class="muted small list-note"></p>
+          <header class="card-head"><div><h3 data-i18n="today.recalls">Recalls due</h3><p class="card-sub list-note"></p></div></header>
           <div class="list-body"></div>
         </article>
       </div>
       <article class="card wide" id="tomorrow">
-        <h3></h3>
+        <header class="card-head"><h3></h3></header>
         <div class="list-body table-scroll"></div>
       </article>
     </div>
   </section>
 </main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

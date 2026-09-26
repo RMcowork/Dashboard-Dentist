@@ -103,3 +103,11 @@ test('demo generator is deterministic and stays under the Airtable free-plan lim
   const [pats, dens, trts] = [ids('patients'), ids('dentists'), ids('treatments')];
   assert.ok(a.appointments.every((x) => pats.has(x.patientId) && dens.has(x.dentistId) && trts.has(x.treatmentId)));
 });
+
+test('kpiSeries has one KPI set per trend bucket', async () => {
+  const { kpiSeries } = await import('../public/js/metrics.js');
+  const s = kpiSeries(fixture, '2026-09-20', '2026-09-26');
+  assert.equal(s.length, 6);
+  assert.equal(s[0].revenue, 1300);
+  assert.equal(s[5].revenue, 0); // Friday: only a scheduled visit
+});

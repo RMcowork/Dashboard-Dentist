@@ -106,8 +106,9 @@ Payments are folded into appointments (`paid`, `paymentMethod`) to stay under th
 ## 6. Data sources
 | `DATA_SOURCE` | Behaviour |
 |---|---|
-| `demo` (default) | Generated in memory by `server/demo/generate.js`, anchored to the real current date and time, so the Front desk tab always looks live. Deterministic for a given day. |
-| `airtable` | Reads the four tables through the REST API on the server and caches for `AIRTABLE_CACHE_MINUTES` (default 15). The token never reaches the browser. |
+| `auto` (default) | `airtable` when `AIRTABLE_TOKEN` and `AIRTABLE_BASE_ID` are set, otherwise `demo`. |
+| `demo` | Generated in memory by `server/demo/generate.js`, anchored to the real current date and time, so the Front desk tab always looks live. Deterministic for a given day. |
+| `airtable` | Reads the four tables through the REST API on the server: a full load every `AIRTABLE_FULL_SYNC_MINUTES` (30), delta syncs of changed records in between, and at most one sync per `AIRTABLE_MIN_INTERVAL_SECONDS` (15). The token never reaches the browser. |
 | *future* | CSV import, or a practice-management system export. Add an adapter that returns the same shape. |
 
 Demo volume, sized for the free plan:
@@ -117,6 +118,13 @@ Demo volume, sized for the free plan:
 - about 700 appointments: 8 weeks back and 2 weeks ahead
 
 That comes to about 875 records, with about 8% no-shows, 5% cancellations, 18% of visits not fully paid, and about 40 patients due for recall.
+
+### Live refresh
+- The browser polls `/api/data` at a user-chosen interval: Off, 15 s, 30 s, **1 min (default)**, 2, 5 or 15 min. The choice is saved in localStorage.
+- Every refresh visibly loads for at least 900 ms: a top progress bar, shimmer on cards, and a spinning sync ring.
+- After loading, KPI values count up, cards whose value changed glow, changed appointments flash, and a toast reports *Data refreshed* with the number of changes.
+- The sync pill shows *Live / Syncing / Offline / Paused*, "Updated X ago", and a ring counting down to the next refresh. ↻ forces a refresh (`?force=1`).
+- Refreshing pauses while the browser tab is hidden and catches up when it's visible again.
 
 ## 7. Internationalisation
 - The language changes `<html lang dir>`, all strings (`public/i18n/*.json`), Intl number/date/currency formats, treatment names (per-language fields), and chart direction:

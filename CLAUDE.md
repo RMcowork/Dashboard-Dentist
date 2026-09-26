@@ -12,14 +12,15 @@ The UI is English by default, with Hebrew and Arabic (RTL) selectable. Money is 
 ## Stack
 - Vanilla JS (ES modules) and CSS, with no build step and **no npm dependencies**. Chart.js 4 loads from jsDelivr.
 - Node ≥ 20 (`node:test`, global `fetch`). `server/serve.js` serves `public/` and a JSON API.
-- Data comes through an **adapter** chosen by `DATA_SOURCE`: `demo` (generated in memory) or `airtable`.
+- Data comes through an **adapter** chosen by `DATA_SOURCE`: `auto` (default: Airtable when `AIRTABLE_TOKEN` and `AIRTABLE_BASE_ID` are set, else demo), `demo` or `airtable`.
+- Fonts (Google Fonts): Inter (UI), Plus Jakarta Sans (display), Rubik (Hebrew), IBM Plex Sans Arabic (Arabic). They are set via `--font-ui` and `--font-display` in `public/style.css`.
 
 ## Commands
 ```bash
-npm start            # http://localhost:8940  (DATA_SOURCE from .env, default demo)
+npm start            # http://localhost:8940  (DATA_SOURCE from .env, default auto)
 npm test             # node --test: KPI formulas, generator, Airtable mapping
 npm run generate     # write data/demo.json (snapshot to seed Airtable with)
-npm run seed         # upload data/demo.json to AIRTABLE_BASE_ID (add --reset to replace)
+npm run seed         # upload data/demo.json to AIRTABLE_BASE_ID (add --reset to replace; the demo base is already seeded)
 ```
 The preview config lives in `.claude/launch.json` (name `dental-dashboard`, port 8940).
 
@@ -65,7 +66,8 @@ The keys and labels are defined in `server/schema.js`.
 - **Escape data before `innerHTML`**: use `esc()` from `public/js/dom.js`.
 - **Dentist colour = categorical slot by chair order** (`--series-N`). Don't cycle or invent colours. See PRACTICE → Charts.
 - Demo data must stay **under 1,000 records**, the Airtable free-plan base limit. A test enforces this.
-- The Airtable free plan also has only ~1,000 API calls/month, so don't lower `AIRTABLE_CACHE_MINUTES` casually.
+- The Airtable free plan also has only ~1,000 API calls/month. The adapter delta-syncs (only changed records between full loads), coalesces concurrent requests and enforces `AIRTABLE_MIN_INTERVAL_SECONDS`. Keep those protections when you touch `server/adapters/airtable.js`.
+- **Refresh cycle** (`public/js/app.js`): the user picks the interval (Off, 15 s … 15 min, default 1 min, stored in localStorage). Every refresh shows the loading state for at least 900 ms, then re-renders with count-up, changed-card glow and a toast. Refreshing pauses while the browser tab is hidden.
 - Patient data is sensitive (see PRACTICE → Privacy). The demo uses fictional names and `05x-555-xxxx` numbers.
 
 ## Verifying a UI change

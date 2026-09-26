@@ -61,33 +61,38 @@ Two design choices here:
 - `Date` and `Start` are separate plain fields, not one date-time field. That avoids time-zone shifts between Airtable, the server and the browser.
 - Payments live on the appointment to stay under the 1,000-record free-plan limit.
 
-## Seeding
+## Reading the base
+The demo base is already seeded, so you only need a **read-only** token:
 1. Create a personal access token at <https://airtable.com/create/tokens>.
-   - **Scopes:** `data.records:read`, `data.records:write`, `schema.bases:read`, `schema.bases:write`
+   - **Scope:** `data.records:read`
    - **Access:** only *Dental Clinic Demo*
-2. Put the token and base ID in `.env`:
+2. Put it in `.env` (the base ID is already there):
    ```
    AIRTABLE_TOKEN=pat…
    AIRTABLE_BASE_ID=appTRu3aSv38OmmGV
    ```
-3. Generate and upload:
-   ```bash
-   npm run generate
-   npm run seed
-   ```
-   - The upload takes about 90 write requests and about 25 s, because of the 5 requests/second limit.
-   - Use `npm run seed -- --reset` to delete the existing records and re-seed, for example to move the demo's "today" forward.
-4. Set `DATA_SOURCE=airtable` in `.env` and restart the server. The badge should read **Airtable**.
+3. Restart the server. With `DATA_SOURCE=auto` it switches to Airtable, and the badge reads **Airtable · live**.
 
-The demo data is anchored to the day you ran `generate`. After that, days pass but the Airtable data doesn't move. Re-seed with `--reset` when you want a fresh "today".
+The seeded data is anchored to **2026-09-26** (appointments from 2026-08-02 to 2026-10-09). Days pass but the Airtable data doesn't move. Re-seed when you want a fresh "today" (below).
 
-## Limits (free plan)
-- **1,000 records per base.** The demo uses about 875 records.
-- **About 1,000 API calls per month per workspace.**
-  - One dashboard refresh reads every table at 100 records per call, so about 11 calls.
-  - The server caches for `AIRTABLE_CACHE_MINUTES` (default 15). That works out to about 44 calls per hour while someone has the dashboard open.
-  - Raise the cache time for long-running screens.
-  - A seed costs about 100 calls.
+## Re-seeding (optional)
+Needs a token with `data.records:read`, `data.records:write`, `schema.bases:read` and `schema.bases:write`. Consider a separate token that you delete afterwards.
+```bash
+npm run generate
+npm run seed -- --reset
+```
+- `--reset` deletes the existing records first.
+- The upload takes about 90 write requests and about 25 s, because of the 5 requests/second limit.
+
+## Sync & limits (free plan)
+- **1,000 records per base.** The demo uses 874.
+- **About 1,000 API calls per month per workspace.** This is why the adapter does not simply reload everything on every refresh:
+  - **Full load** on the first request and every `AIRTABLE_FULL_SYNC_MINUTES` (default 30): every table at 100 records per call, about 11 calls.
+  - **Delta sync** in between: only Patients and Appointments records created or modified since the last sync (`LAST_MODIFIED_TIME()` / `CREATED_TIME()` filter, 5 s skew), merged by record id. That is usually 2 calls.
+  - **Coalescing:** concurrent browser requests share one in-flight sync, and syncs closer than `AIRTABLE_MIN_INTERVAL_SECONDS` (default 15) return the cached result.
+  - **Stale fallback:** if Airtable fails after a good sync, the last data is served, and the UI shows *Offline* with a warning toast.
+  - The browser pauses refreshing while its tab is hidden.
+  - Rough budget at the default 1-minute refresh: ~2 calls/min, or ~120 calls per open hour. On the free plan, choose 5 or 15 minutes for screens that stay open all day. The badge tooltip shows calls used since server start.
 - **5 requests per second per base.** Both the adapter and the seed script are sequential.
 
 ## Connecting a real clinic base

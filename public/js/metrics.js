@@ -155,3 +155,14 @@ export function recallsDue(data, asOf) {
     .filter((r) => r.overdueDays > 0)
     .sort((a, b) => b.overdueDays - a.overdueDays);
 }
+
+// KPI values per trend bucket (same bucketing as trend()), for sparklines.
+export function kpiSeries(data, from, to) {
+  const { unit, buckets } = trend(data, from, to);
+  return buckets.map((b) => {
+    const start = b.start < from ? from : b.start;
+    const weekEnd = addDays(b.start, 6);
+    const end = unit === 'week' ? (weekEnd > to ? to : weekEnd) : b.start;
+    return computeKpis(data, start, end);
+  });
+}

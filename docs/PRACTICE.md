@@ -27,7 +27,7 @@ How we build and change this project. The short version is in `CLAUDE.md`.
 - An adapter is a module exporting `name` and `async getData()`, returning the normalized shape documented in `CLAUDE.md`.
 - Normalize at the edge. Adapters convert labels to keys (`'No-show'` → `no_show`), dates to `YYYY-MM-DD` and times to `HH:MM`. The UI never sees source-specific formats.
 - Missing values become `null`, not `undefined` or `''`. Metrics treat `null` safely.
-- Cache inside the adapter, and respect the source's rate and quota limits:
+- Cache inside the adapter (the Airtable adapter delta-syncs and coalesces, see docs/AIRTABLE.md), and respect the source's rate and quota limits:
   - Airtable: 5 requests/second per base
   - Free plan: about 1,000 API calls/month
 - To add a source:
