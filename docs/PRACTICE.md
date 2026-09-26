@@ -103,4 +103,5 @@ We follow the dataviz method: form first, colour last. The rules:
 - Branch from `main`; keep changes small and focused.
 - Commit messages are imperative ("Add recall list to front desk"), with a body explaining *why* when it isn't obvious.
 - Never commit `.env`, `data/demo.json` or real data.
-- Pushing to `main` deploys GitHub Pages (tests must pass first). Note user-visible changes in `CHANGELOG.md`.
+- Pushing to `main` deploys GitHub Pages (tests must pass first).
+- Every change updates the docs in the same commit: `CLAUDE.md` (layout, rules), `docs/SPEC.md` (behaviour), `docs/PRACTICE.md` (how we build it) and `CHANGELOG.md` (what changed).

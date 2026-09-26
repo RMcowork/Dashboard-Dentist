@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-27
+
+### Process
+- Docs (`CLAUDE.md`, `docs/PRACTICE.md`, `docs/SPEC.md`, `CHANGELOG.md`) are now updated with every change, as a rule in `CLAUDE.md` and `docs/PRACTICE.md`.
+
 ## 2026-09-26
 
 ### Market tab (Apify + Airtable)

@@ -76,6 +76,7 @@ docs/                      SPEC.md, PRACTICE.md, AIRTABLE.md, MARKET.md, BENEFIT
 The keys and labels are defined in `public/js/data/schema.js`.
 
 ## Rules that matter
+- **Docs are part of every change.** In the same commit, update `CLAUDE.md`, `docs/PRACTICE.md`, `docs/SPEC.md` and `CHANGELOG.md` (and README / `docs/MARKET.md` / `docs/AIRTABLE.md` / `docs/BENEFITS.md` when affected). Don't wait to be asked.
 - **Secrets stay out of the repo and the build.** In server mode `AIRTABLE_TOKEN` stays on the server; never send it to the browser, log it, or commit `.env`. In browser mode (GitHub Pages) the viewer's own read-only token lives only in their localStorage (`dental-dash.airtable`) and goes only to `api.airtable.com`. Never add a token to `public/`, the workflow, or a Pages build.
 - **Code in `public/js/data/` runs in Node and the browser**: no Node APIs, no DOM (except `source.js`).
 - **KPI formulas live only in `metrics.js`** and are documented in `docs/SPEC.md`. If you change one, change both and update `test/metrics.test.js`.
