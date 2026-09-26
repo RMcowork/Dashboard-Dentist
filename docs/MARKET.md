@@ -72,6 +72,8 @@ npm run collect -- --dry-run
 - **Google Trends run is slow or times out.** Google rate-limits Trends scrapers; the first version (12 Trends URLs in one run) got only 1 page through in 19 minutes. The collector now makes one comparison run per region (1 page each) and then optional per-term runs for rising searches, each with a hard 8-minute limit that Apify enforces (Maps: 10 min). A stuck run stops on its own and doesn't keep spending credits; partial results are kept. It runs again the next morning.
 - **A run failed in Actions.** Open *Actions → Collect market trends → the run → Collect* for the log; every part prints ✓ or ✗ with the reason. The other part still runs, and existing records are never deleted.
 
+- **`Input is not valid: Field input.timeRange …`**: the actor's time ranges differ from Google Trends URLs. `actorTimeRange` in `market-config.js` must be one of the values the error lists (`''` = past 12 months).
+
 ## Caveats
 - Google Trends numbers are relative, not search volumes: they show direction and seasonality, not how many people searched.
 - Hebrew search terms have low volume for some treatments; a term with too little data returns zeros. Pick wordings people actually use.

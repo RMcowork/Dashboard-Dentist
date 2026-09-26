@@ -6,7 +6,8 @@ export const MARKET_BASE_ID = 'app4RLlYNfgYxgs7f'; // Airtable base "Dental Mark
 export const MARKET = {
   // Google Trends: all topics of a region are compared in ONE request, so their values
   // share a scale (100 = the busiest week of the busiest topic in that region). Max 5 topics.
-  timeRange: 'today 12-m',
+  timeRange: 'today 12-m', // Trends URL form
+  actorTimeRange: '', // apify/google-trends-scraper form: '' = past 12 months (its allowed values differ from the URL's)
   regions: [
     { key: 'IL', geo: 'IL' },
     { key: 'Worldwide', geo: '' },

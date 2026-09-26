@@ -3,6 +3,7 @@
 ## 2026-09-27
 
 ### Market collector
+- Fix: the Trends actor accepts `timeRange: ''` for the past 12 months, not `today 12-m` (`actorTimeRange` in market-config.js).
 - Google Trends now uses the actor's documented `searchTerms` + `isMultiple` input: one comparison run per region (1 page each) instead of 12 URLs in one run, which Google mostly blocked. Rising searches come from separate, optional per-term runs.
 - First real collection: 20 nearby clinics saved; Trends saved 1 of 10 series before this change.
 - Each Apify run now has a hard time limit enforced by Apify (Trends 20 min, Maps 10 min); an overrunning run is aborted and its partial results are used.

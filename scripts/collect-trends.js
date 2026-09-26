@@ -90,7 +90,7 @@ async function trendsRun(region, terms, { compare, timeoutSecs }) {
     searchTerms: compare ? [terms.join(',')] : terms,
     isMultiple: compare,
     ...(region.geo ? { geo: region.geo } : {}),
-    timeRange: MARKET.timeRange,
+    timeRange: MARKET.actorTimeRange,
     maxItems: 0,
     skipDebugScreen: true,
     maxConcurrency: 2,
