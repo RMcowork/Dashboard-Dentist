@@ -87,7 +87,7 @@ The keys and labels are defined in `public/js/data/schema.js`.
 - The Airtable free plan also has only ~1,000 API calls/month. The adapter delta-syncs (only changed records between full loads), coalesces concurrent requests and enforces `AIRTABLE_MIN_INTERVAL_SECONDS`. Keep those protections when you touch `public/js/data/airtable-sync.js`.
 - **Refresh cycle** (`public/js/app.js`): the user picks the interval (Off, 15 s … 15 min, default 1 min, stored in localStorage). Every refresh shows the loading state for at least 900 ms, then re-renders with count-up, changed-card glow and a toast. Refreshing pauses while the browser tab is hidden.
 - **Phone layout** (≤ 600 px) is CSS-only except the agenda list, which `today.js` renders next to the chair grid; CSS shows one or the other. Don't put `backdrop-filter`/`transform` on ancestors of the fixed bottom tab bar.
-- **Market data is separate**: its own base (`app4RLlYNfgYxgs7f`), its own write token used only by the collector, and a failure there must never break the other tabs (`loadMarket()` falls back to demo). Keep the base small: one record per topic+region and per clinic, history as JSON.
+- **Market data is separate**: its own base (`app4RLlYNfgYxgs7f`), its own write token used only by the collector (Apify runs always have a hard timeout; see PRACTICE → Scrapers), and a failure there must never break the other tabs (`loadMarket()` falls back to demo). Keep the base small: one record per topic+region and per clinic, history as JSON.
 - Patient data is sensitive (see PRACTICE → Privacy). The demo uses fictional names and `05x-555-xxxx` numbers.
 
 ## Verifying a UI change

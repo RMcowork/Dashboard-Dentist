@@ -18,7 +18,6 @@ loadEnv();
 
 const APIFY = 'https://api.apify.com/v2';
 const AIRTABLE = 'https://api.airtable.com/v0';
-const RUN_TIMEOUT_MS = 20 * 60_000;
 const args = process.argv.slice(2);
 const only = args.find((a) => a.startsWith('--only='))?.slice(7);
 const dryRun = args.includes('--dry-run');
@@ -35,22 +34,31 @@ async function apify(path, init = {}) {
 }
 
 // Start an actor run, wait for it, return its dataset items.
-async function runActor(actorId, input) {
-  const { data: run } = await apify(`/acts/${actorId.replace('/', '~')}/runs`, { method: 'POST', body: JSON.stringify(input) });
-  console.log(`  ${actorId}: run ${run.id} started`);
+// `timeoutSecs` is also given to Apify, so a stuck run is stopped there and can't keep
+// spending credits. If a run times out or is aborted, whatever it already scraped is used.
+async function runActor(actorId, input, { timeoutSecs }) {
+  const { data: run } = await apify(`/acts/${actorId.replace('/', '~')}/runs?timeout=${timeoutSecs}`, { method: 'POST', body: JSON.stringify(input) });
+  console.log(`  ${actorId}: run ${run.id} started (limit ${Math.round(timeoutSecs / 60)} min)`);
   const started = Date.now();
-  let status = run.status;
-  let datasetId = run.defaultDatasetId;
+  let { status, defaultDatasetId: datasetId } = run;
   while (!['SUCCEEDED', 'FAILED', 'ABORTED', 'TIMED-OUT'].includes(status)) {
-    if (Date.now() - started > RUN_TIMEOUT_MS) throw new Error(`${actorId}: run ${run.id} still ${status} after 20 min`);
+    if (Date.now() - started > (timeoutSecs + 60) * 1000) {
+      await apify(`/actor-runs/${run.id}/abort`, { method: 'POST' }).catch(() => {});
+      status = 'ABORTED';
+      break;
+    }
     await sleep(10_000);
     const { data } = await apify(`/actor-runs/${run.id}`);
-    ({ status } = data);
-    datasetId = data.defaultDatasetId;
+    ({ status, defaultDatasetId: datasetId } = data);
   }
-  if (status !== 'SUCCEEDED') throw new Error(`${actorId}: run ${run.id} ended ${status}`);
   const items = await apify(`/datasets/${datasetId}/items?clean=true&format=json`);
-  console.log(`  ${actorId}: ${items.length} items in ${Math.round((Date.now() - started) / 1000)} s`);
+  const secs = Math.round((Date.now() - started) / 1000);
+  if (status !== 'SUCCEEDED') {
+    if (!items.length) throw new Error(`${actorId}: run ${run.id} ended ${status} after ${secs} s with no results`);
+    console.warn(`  ${actorId}: run ${run.id} ended ${status}; using the ${items.length} items scraped so far`);
+  } else {
+    console.log(`  ${actorId}: ${items.length} items in ${secs} s`);
+  }
   return items;
 }
 
@@ -80,7 +88,16 @@ async function collectTrends() {
     const terms = MARKET.topics.map((tp) => tp.terms[region.key]);
     return [trendsUrl(region.geo, terms), ...terms.map((term) => trendsUrl(region.geo, [term]))];
   }).map((url) => ({ url }));
-  const items = await runActor('apify/google-trends-scraper', { startUrls, maxItems: 0, skipDebugScreen: true });
+  // Comparison URLs first: if the run is cut short, the shared-scale series are what matters most.
+  startUrls.sort((a, b) => b.url.split(',').length - a.url.split(',').length);
+  const items = await runActor('apify/google-trends-scraper', {
+    startUrls,
+    maxItems: 0,
+    skipDebugScreen: true,
+    maxConcurrency: 4,
+    maxRequestRetries: 3,
+    pageLoadTimeoutSecs: 90,
+  }, { timeoutSecs: 20 * 60 });
   const trends = normalizeTrends(items);
   if (!trends.length) throw new Error('Google Trends returned no usable series; nothing written');
   for (const tr of trends) console.log(`  ${tr.key.padEnd(20)} latest ${tr.latest ?? '—'}  3m ${tr.change3m == null ? '—' : `${Math.round(tr.change3m * 100)}%`}  rising ${tr.rising.length}`);
@@ -100,7 +117,7 @@ async function collectPlaces() {
     maxImages: 0,
     scrapePlaceDetailPage: false,
     skipClosedPlaces: true,
-  });
+  }, { timeoutSecs: 10 * 60 });
   const baseId = process.env.AIRTABLE_MARKET_BASE_ID || MARKET_BASE_ID;
   const existing = (await listAll(baseId, requireEnv('AIRTABLE_MARKET_TOKEN'), MARKET_TABLES.competitors)).map(competitorFromRecord);
   const clinics = normalizePlaces(items, existing, todayIL());
@@ -110,7 +127,8 @@ async function collectPlaces() {
   return clinics.length;
 }
 
-const jobs = { trends: collectTrends, places: collectPlaces };
+// Places first: it's quick, so a slow Google Trends run doesn't hold it up.
+const jobs = { places: collectPlaces, trends: collectTrends };
 let failed = false;
 for (const [name, job] of Object.entries(jobs)) {
   if (only && only !== name) continue;
@@ -119,7 +137,10 @@ for (const [name, job] of Object.entries(jobs)) {
     console.log(`✓ ${name}: ${n} records ${dryRun ? '(dry run, not written)' : 'upserted'}\n`);
   } catch (err) {
     failed = true;
-    console.error(`✗ ${name}: ${err.message}\n`);
+    const hint = /Airtable .*: 40[13]/.test(err.message)
+      ? '\n  → AIRTABLE_MARKET_TOKEN must have scopes data.records:read + data.records:write AND access to the "Dental Market Trends" base (airtable.com/create/tokens → edit token → Access).'
+      : '';
+    console.error(`✗ ${name}: ${err.message}${hint}\n`);
   }
 }
 process.exit(failed ? 1 : 0);

@@ -66,6 +66,11 @@ npm run collect -- --dry-run
 - **Airtable.** A collection costs about 5 API calls; dashboard reads 2 calls per 10 minutes per open dashboard. Both are small next to the ~1,000 calls/month free-plan limit, but they share it with the clinic data.
 - **GitHub Actions.** A few minutes a day, within the free allowance.
 
+## Troubleshooting
+- **`Airtable Competitors: 403 … INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND`**: `AIRTABLE_MARKET_TOKEN` can't see the market base. Edit the token at <https://airtable.com/create/tokens>: scopes `data.records:read` and `data.records:write`, and under **Access** add *Dental Market Trends*. Nothing needs to change in GitHub if you edit the same token.
+- **Google Trends run is slow or times out.** Google Trends pages load slowly and Google sometimes rate-limits scrapers. Each Apify run has a hard limit (Trends 20 min, Maps 10 min) that Apify itself enforces, so a stuck run stops and doesn't keep spending credits. When the limit is hit, the collector keeps whatever was already scraped: the two comparison pages are requested first, so the chart and cards usually survive and only some rising searches are missing. It runs again the next morning.
+- **A run failed in Actions.** Open *Actions → Collect market trends → the run → Collect* for the log; every part prints ✓ or ✗ with the reason. The other part still runs, and existing records are never deleted.
+
 ## Caveats
 - Google Trends numbers are relative, not search volumes: they show direction and seasonality, not how many people searched.
 - Hebrew search terms have low volume for some treatments; a term with too little data returns zeros. Pick wordings people actually use.

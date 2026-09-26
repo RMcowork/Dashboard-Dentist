@@ -2,6 +2,11 @@
 
 ## 2026-09-27
 
+### Market collector
+- Each Apify run now has a hard time limit enforced by Apify (Trends 20 min, Maps 10 min); an overrunning run is aborted and its partial results are used.
+- Google Maps runs first; Google Trends requests the comparison pages first and uses gentler settings (fewer retries, 4 pages at a time).
+- A clear hint when the Airtable token lacks access to the market base (403).
+
 ### Process
 - Docs (`CLAUDE.md`, `docs/PRACTICE.md`, `docs/SPEC.md`, `CHANGELOG.md`) are now updated with every change, as a rule in `CLAUDE.md` and `docs/PRACTICE.md`.
 

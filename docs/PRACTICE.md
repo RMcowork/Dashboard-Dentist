@@ -42,6 +42,7 @@ How we build and change this project. The short version is in `CLAUDE.md`.
 - Normalize Apify output in `public/js/data/market-schema.js` and cover it with fixture tests; treat every field as optional.
 - Refuse to write when a run returns nothing usable, and never delete records: a failed day keeps yesterday's data.
 - Keep runs cheap: no reviews or images from Google Maps, a fixed `maxPlaces`, one comparison per region for Google Trends.
+- Every Apify run gets a `timeout` passed to Apify (so a stuck run is stopped on Apify's side), and the collector aborts it if it overruns. Partial results are used rather than thrown away; order inputs so the most important pages come first.
 
 ## Secrets & configuration
 - Configuration lives only in environment variables or `.env` (git-ignored). `.env.example` lists every variable and must be kept current.
