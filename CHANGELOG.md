@@ -2,6 +2,12 @@
 
 ## 2026-09-26
 
+### Market tab (Apify + Airtable)
+- New **Market** tab: Google Trends search interest (Israel / worldwide) for five treatments, rising searches, and nearby clinics' ratings and review momentum from Google Maps.
+- Daily collector `scripts/collect-trends.js` (GitHub Actions, 07:00 Israel) runs the Apify actors and upserts into the new Airtable base *Dental Market Trends*.
+- `GET /api/market` for server mode; browser mode reads the market base with the same connected token. Demo market data until the collector has run.
+- Docs: `docs/MARKET.md`.
+
 ### Docs
 - Added `docs/BENEFITS.md`: what the dashboard does for the owner and the front desk.
 

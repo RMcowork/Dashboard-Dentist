@@ -95,7 +95,10 @@ export function treatmentName(trt) {
 // "12 seconds ago" / "לפני 12 שניות" / "قبل 12 ثانية"
 export function fmtAgo(seconds) {
   const rtf = new Intl.RelativeTimeFormat(loc(), { numeric: 'auto', style: 'long' });
-  return seconds < 60 ? rtf.format(-Math.max(0, Math.round(seconds)), 'second') : rtf.format(-Math.round(seconds / 60), 'minute');
+  if (seconds < 60) return rtf.format(-Math.max(0, Math.round(seconds)), 'second');
+  if (seconds < 3600) return rtf.format(-Math.round(seconds / 60), 'minute');
+  if (seconds < 86400) return rtf.format(-Math.round(seconds / 3600), 'hour');
+  return rtf.format(-Math.round(seconds / 86400), 'day');
 }
 
 // Interval labels: "15 sec", "1 min" in the active locale.

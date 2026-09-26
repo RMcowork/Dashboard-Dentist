@@ -3,8 +3,8 @@
 import { addDays, diffDays, monthStart } from './dates.js';
 import { byDentist, categoryMix, computeKpis, kpiSeries, previousPeriod, trend } from './metrics.js';
 import { fmtDate, fmtMoney, fmtMoneyShort, fmtNum, fmtPct, t } from './i18n.js';
-import { renderChart, seriesColor } from './charts.js';
-import { esc, initials, tableHtml } from './dom.js';
+import { chartCard, seriesColor } from './charts.js';
+import { esc, initials, sparkline } from './dom.js';
 import { icon } from './icons.js';
 
 export const PRESETS = ['7d', '28d', 'mtd', 'lastMonth', '90d', 'custom'];
@@ -50,25 +50,6 @@ function deltaHtml(kpi, cur, prev) {
   const up = diff > 0;
   const good = up !== Boolean(kpi.lowerIsBetter);
   return `<span class="delta ${good ? 'good' : 'bad'}"><span aria-hidden="true">${up ? '▲' : '▼'}</span> ${esc(shownDiff)}</span>`;
-}
-
-// Tiny trend line for a KPI card. Values are drawn left→right; CSS mirrors it in RTL.
-function sparkline(values, id) {
-  const pts = values.map((v, i) => [i, v]).filter(([, v]) => v != null);
-  if (pts.length < 2) return '';
-  const W = 120;
-  const H = 36;
-  const ys = pts.map(([, v]) => v);
-  const min = Math.min(...ys);
-  const span = Math.max(...ys) - min || 1;
-  const x = (i) => (i / (values.length - 1)) * W;
-  const y = (v) => H - 3 - ((v - min) / span) * (H - 6);
-  const line = pts.map(([i, v], n) => `${n ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
-  const areaPath = `${line}L${x(pts.at(-1)[0]).toFixed(1)},${H}L${x(pts[0][0]).toFixed(1)},${H}Z`;
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="sg-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
-    <path d="${areaPath}" fill="url(#sg-${id})"/><path d="${line}" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-  </svg>`;
 }
 
 function countUp(el, from, to, format, ms = 900) {
@@ -180,11 +161,4 @@ export function renderOverview(root, data, { from, to }, mode = 'static') {
       <td class="num">${fmtNum(d.noShows)}</td>
       <td class="num">${fmtPct(d.noShowRate, 1)}</td>
     </tr>`).join('')}</tbody>`;
-}
-
-// Renders a chart and its table twin (the accessible view); the card's toggle picks which shows.
-function chartCard(root, id, chart, headers, rows) {
-  const card = root.querySelector(`[data-chart="${id}"]`);
-  renderChart(card.querySelector('canvas'), chart);
-  card.querySelector('table').innerHTML = rows.length ? tableHtml(headers, rows) : `<caption>${esc(t('empty'))}</caption>`;
 }

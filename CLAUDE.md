@@ -3,9 +3,10 @@
 Guide for Claude (and humans) working in this repo. Read this first, then `docs/SPEC.md` for *what* the product does and `docs/PRACTICE.md` for *how* we write code here.
 
 ## What this is
-A dashboard for a dental clinic with two tabs:
+A dashboard for a dental clinic with three tabs:
 - **Overview**: owner/manager KPIs, trends, dentist performance.
 - **Front desk**: a day's schedule by chair, plus call lists (unpaid balances, recalls due, next-day confirmations).
+- **Market**: dental search trends (Google Trends) and nearby clinics (Google Maps), collected daily by Apify into a separate Airtable base. See `docs/MARKET.md`.
 
 The UI is English by default, with Hebrew and Arabic (RTL) selectable. Money is shown in ₪ (ILS).
 
@@ -21,6 +22,7 @@ npm start            # http://localhost:8940  (DATA_SOURCE from .env, default au
 node server/serve.js --static --port=8941   # no API: browser mode, like GitHub Pages
 npm test             # node --test: KPI formulas, generator, Airtable mapping
 npm run generate     # write data/demo.json (snapshot to seed Airtable with)
+npm run collect      # Apify → market base (needs APIFY_TOKEN + AIRTABLE_MARKET_TOKEN; add -- --dry-run)
 npm run seed         # upload data/demo.json to AIRTABLE_BASE_ID (add --reset to replace; the demo base is already seeded)
 ```
 Preview configs live in `.claude/launch.json`: `dental-dashboard` (server mode, port 8940) and `dental-static` (browser mode, port 8941).
@@ -29,30 +31,33 @@ The live site is <https://rmcowork.github.io/Dashboard-Dentist/> (repo `RMcowork
 
 ## Layout
 ```
-server/serve.js            static files + GET /api/data
+server/serve.js            static files + GET /api/data + GET /api/market
 server/env.js              .env loader (no deps)
-server/adapters/*.js       demo | airtable; thin Node wrappers over public/js/data/*
+server/adapters/*.js       demo | airtable | market; thin Node wrappers over public/js/data/*
 public/js/data/schema.js   data model ↔ Airtable table/field/label mapping (single source of truth)
 public/js/data/generate.js deterministic demo generator (seeded RNG, anchored to "today")
 public/js/data/airtable-sync.js  Airtable reader: full/delta sync, coalescing, stale (Node + browser)
 public/js/data/demo-source.js    demo data cached per minute (Node + browser)
-public/js/data/source.js   browser data layer: server mode (api/data) or browser mode (static hosting)
+public/js/data/source.js   browser data layer: server mode (api/data, api/market) or browser mode (static hosting)
+public/js/data/market-*.js Market tab: config (topics, location, base id), schema + Apify normalizers, reader, demo
 public/index.html          markup; strings carry data-i18n keys; Connect Airtable dialog
 public/js/app.js           state, refresh cycle, connect dialog, wiring
 public/js/metrics.js       PURE KPI functions (shared with Node tests)
 public/js/dates.js         date helpers + clinic opening hours (shared with Node)
 public/js/overview.js      Overview tab
 public/js/today.js         Front-desk tab
+public/js/market.js        Market tab
 public/js/charts.js        Chart.js wrapper (tokens from CSS, RTL axes)
 public/js/i18n.js          t(), setLang(), Intl formatters
 public/js/icons.js         inline SVG icons
 public/js/dom.js           esc(), tableHtml(), initials()
 public/style.css           tokens (light/dark, palette, fonts), components, phone layout (≤ 600 px)
 public/i18n/{en,he,ar}.json
-scripts/                   generate-demo.js, seed-airtable.js
-test/                      metrics, schema round-trip, Airtable sync (mocked fetch)
+scripts/                   generate-demo.js, seed-airtable.js, collect-trends.js (daily Apify collector)
+test/                      metrics, schema round-trip, Airtable sync (mocked fetch), market normalizers
 .github/workflows/pages.yml  test + publish public/ to GitHub Pages
-docs/                      SPEC.md, PRACTICE.md, AIRTABLE.md; CHANGELOG.md at the root
+.github/workflows/collect-trends.yml  daily Apify collection (secrets APIFY_TOKEN, AIRTABLE_MARKET_TOKEN)
+docs/                      SPEC.md, PRACTICE.md, AIRTABLE.md, MARKET.md, BENEFITS.md; CHANGELOG.md at the root
 ```
 
 ## The normalized data shape (the adapter contract)
@@ -81,6 +86,7 @@ The keys and labels are defined in `public/js/data/schema.js`.
 - The Airtable free plan also has only ~1,000 API calls/month. The adapter delta-syncs (only changed records between full loads), coalesces concurrent requests and enforces `AIRTABLE_MIN_INTERVAL_SECONDS`. Keep those protections when you touch `public/js/data/airtable-sync.js`.
 - **Refresh cycle** (`public/js/app.js`): the user picks the interval (Off, 15 s … 15 min, default 1 min, stored in localStorage). Every refresh shows the loading state for at least 900 ms, then re-renders with count-up, changed-card glow and a toast. Refreshing pauses while the browser tab is hidden.
 - **Phone layout** (≤ 600 px) is CSS-only except the agenda list, which `today.js` renders next to the chair grid; CSS shows one or the other. Don't put `backdrop-filter`/`transform` on ancestors of the fixed bottom tab bar.
+- **Market data is separate**: its own base (`app4RLlYNfgYxgs7f`), its own write token used only by the collector, and a failure there must never break the other tabs (`loadMarket()` falls back to demo). Keep the base small: one record per topic+region and per clinic, history as JSON.
 - Patient data is sensitive (see PRACTICE → Privacy). The demo uses fictional names and `05x-555-xxxx` numbers.
 
 ## Verifying a UI change

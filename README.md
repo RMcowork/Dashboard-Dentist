@@ -8,6 +8,7 @@ A dashboard for a small dental clinic, in English, עברית and العربية
 - **Front desk**:
   - The day's schedule by chair (a time-ordered agenda on phones), with live statuses
   - Unpaid balances, recalls due and next-day confirmations
+- **Market**: dental search trends in Israel and worldwide (Google Trends) and nearby clinics' ratings and review momentum (Google Maps), collected daily by **Apify** into Airtable. See [docs/MARKET.md](docs/MARKET.md).
 - **Live refresh**: every 1 minute by default (Off, 15 s … 15 min selectable), with a visible loading/refresh animation and highlights of what changed
 - **Works on phones**: compact header, bottom tab bar, swipeable counters, agenda view
 - Light and dark themes; right-to-left layout for Hebrew and Arabic
@@ -62,6 +63,7 @@ npm test
 | File | What's in it |
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | Orientation for contributors and Claude: layout, data contract, rules |
+| [docs/MARKET.md](docs/MARKET.md) | Market tab: Apify → Airtable collection, setup, cost |
 | [docs/BENEFITS.md](docs/BENEFITS.md) | What the dashboard does for the owner and the front desk |
 | [docs/SPEC.md](docs/SPEC.md) | Product spec: users, screens, exact KPI formulas, roadmap |
 | [docs/PRACTICE.md](docs/PRACTICE.md) | Engineering practice: style, adapters, secrets, privacy, i18n/RTL, charts, testing |

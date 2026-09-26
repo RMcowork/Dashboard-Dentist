@@ -1,7 +1,8 @@
 // Chart.js wrappers: theme tokens from CSS, RTL-aware axes, one instance per canvas.
 /* global Chart */
 
-import { isRtl } from './i18n.js';
+import { isRtl, t } from './i18n.js';
+import { esc, tableHtml } from './dom.js';
 
 const instances = new Map();
 
@@ -60,7 +61,7 @@ function baseOptions({ horizontal = false, valueFormat, animate }) {
     },
     indexAxis: horizontal ? 'y' : 'x',
     scales: horizontal
-      ? { x: { ...valueAxis, reverse: rtl, beginAtZero: true }, y: { ...categoryAxis, position: rtl ? 'right' : 'left' } }
+      ? { x: { ...valueAxis, reverse: rtl, beginAtZero: true }, y: { ...categoryAxis, ticks: { ...categoryAxis.ticks, autoSkip: false }, position: rtl ? 'right' : 'left' } }
       : { x: { ...categoryAxis, reverse: rtl }, y: { ...valueAxis, position: rtl ? 'right' : 'left', beginAtZero: true } },
   };
 }
@@ -83,4 +84,11 @@ export function renderChart(canvas, { type, labels, datasets, horizontal, valueF
     }
     : { borderRadius: 6, borderSkipped: 'start', maxBarThickness: 26, borderWidth: 0, ...d }));
   instances.set(canvas, new Chart(canvas, { type, data: { labels, datasets: styled }, options }));
+}
+
+// Renders a chart and its table twin (the accessible view); the card's toggle picks which shows.
+export function chartCard(root, id, chart, headers, rows) {
+  const card = root.querySelector(`[data-chart="${id}"]`);
+  renderChart(card.querySelector('canvas'), chart);
+  card.querySelector('table').innerHTML = rows.length ? tableHtml(headers, rows) : `<caption>${esc(t('empty'))}</caption>`;
 }

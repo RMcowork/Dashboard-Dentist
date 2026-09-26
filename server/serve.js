@@ -1,5 +1,6 @@
 // Static file server for public/ plus a small JSON API.
 //   GET /api/data[?force=1] -> { source, airtableConfigured, sync, data: { dentists, treatments, patients, appointments } }
+//   GET /api/market[?force=1] -> { source, data: { searchTrends, competitors } }  (Market tab; see docs/MARKET.md)
 // The data source is chosen by DATA_SOURCE: demo | airtable | auto (default: airtable when a token is set).
 
 import http from 'node:http';
@@ -8,6 +9,7 @@ import { extname, join, normalize, sep } from 'node:path';
 import { ROOT, loadEnv } from './env.js';
 import * as demo from './adapters/demo.js';
 import * as airtable from './adapters/airtable.js';
+import { getMarket } from './adapters/market.js';
 
 loadEnv();
 
@@ -39,6 +41,15 @@ async function handleApi(req, res, path, query) {
     try {
       const { data, sync } = await adapter.getData({ force: query.get('force') === '1' });
       sendJson(res, 200, { source: adapter.name, airtableConfigured, sync, data });
+    } catch (err) {
+      console.error(err);
+      sendJson(res, 502, { error: err.message });
+    }
+    return;
+  }
+  if (path === '/api/market') {
+    try {
+      sendJson(res, 200, await getMarket({ force: query.get('force') === '1' }));
     } catch (err) {
       console.error(err);
       sendJson(res, 502, { error: err.message });

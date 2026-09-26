@@ -1,0 +1,43 @@
+# Daily market collection: Apify (Google Trends + Google Maps) → Airtable "Dental Market Trends".
+# The dashboard reads that base live, so no redeploy is needed. Setup: docs/MARKET.md.
+name: Collect market trends
+
+on:
+  schedule:
+    - cron: '0 4 * * *' # 04:00 UTC = 07:00 in Israel (summer time), every day
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Run only one part'
+        type: choice
+        options: [both, trends, places]
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collect-trends
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Collect
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          AIRTABLE_MARKET_TOKEN: ${{ secrets.AIRTABLE_MARKET_TOKEN }}
+          AIRTABLE_MARKET_BASE_ID: ${{ vars.AIRTABLE_MARKET_BASE_ID }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -z "$APIFY_TOKEN" ] || [ -z "$AIRTABLE_MARKET_TOKEN" ]; then
+            echo "::warning::APIFY_TOKEN / AIRTABLE_MARKET_TOKEN secrets are not set; skipping (see docs/MARKET.md)."
+            exit 0
+          fi
+          if [ -n "$ONLY" ] && [ "$ONLY" != "both" ]; then node scripts/collect-trends.js --only="$ONLY"; else node scripts/collect-trends.js; fi

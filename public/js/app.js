@@ -4,22 +4,26 @@ import { addDays, todayStr } from './dates.js';
 import { LANGS, fmtAgo, fmtDate, fmtDuration, fmtNum, savedLang, setLang, t } from './i18n.js';
 import { PRESETS, presetRange, renderOverview } from './overview.js';
 import { renderToday } from './today.js';
+import { renderMarket } from './market.js';
 import { icon } from './icons.js';
 import {
-  DEFAULT_BASE_ID, getMode, loadAirtableConfig, loadData, saveAirtableConfig, testAirtable,
+  DEFAULT_BASE_ID, DEFAULT_MARKET_BASE_ID, getMode, loadAirtableConfig, loadData, loadMarket, saveAirtableConfig, testAirtable,
 } from './data/source.js';
 
 const INTERVALS = [0, 15, 30, 60, 120, 300, 900]; // seconds; 0 = off
 const DEFAULT_INTERVAL = 60;
 const MIN_LOADING_MS = 900; // every refresh visibly "loads", even when the data is instant
-const STORE = { interval: 'dental-dash.refresh', theme: 'dental-dash.theme' };
+const STORE = { interval: 'dental-dash.refresh', theme: 'dental-dash.theme', region: 'dental-dash.region' };
+const TABS = ['overview', 'today', 'market'];
 
 const state = {
   data: null,
   source: null,
   sync: null,
   airtableConfigured: false,
-  tab: location.hash === '#today' ? 'today' : 'overview',
+  tab: TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview',
+  market: null,
+  region: readStore(STORE.region, 'IL'),
   preset: '28d',
   range: presetRange('28d', todayStr()),
   day: todayStr(),
@@ -40,6 +44,9 @@ function readInterval() {
     if (raw !== null && INTERVALS.includes(Number(raw))) return Number(raw);
   } catch { /* storage unavailable */ }
   return DEFAULT_INTERVAL;
+}
+function readStore(key, fallback) {
+  try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
 }
 function writeStore(key, value) {
   try { localStorage.setItem(key, String(value)); } catch { /* storage unavailable */ }
@@ -75,7 +82,11 @@ async function refresh({ manual = false } = {}) {
   setSyncState('syncing');
   const firstLoad = !state.data;
   try {
-    const [body] = await Promise.all([fetchData(manual), sleep(MIN_LOADING_MS)]);
+    // Market data is read after the main data (the source mode is known then); it is
+    // cached for 10 minutes, and a failure there falls back to demo without breaking this refresh.
+    const load = async () => [await fetchData(manual), await loadMarket({ force: manual })];
+    const [[body, market]] = await Promise.all([load(), sleep(MIN_LOADING_MS)]);
+    state.market = market;
     state.changedIds = diffAppointments(state.data, body.data);
     Object.assign(state, {
       data: body.data, source: body.source, sync: body.sync, airtableConfigured: body.airtableConfigured,
@@ -122,7 +133,8 @@ function render(mode = 'static') {
   }
   $('#overview-controls').hidden = state.tab !== 'overview';
   if (state.tab === 'overview') renderOverview($('#overview'), state.data, state.range, mode);
-  else renderToday($('#today'), state.data, state.day, { changedIds: mode === 'refresh' ? state.changedIds : new Set() });
+  else if (state.tab === 'today') renderToday($('#today'), state.data, state.day, { changedIds: mode === 'refresh' ? state.changedIds : new Set() });
+  else if (state.market) renderMarket($('#market'), state.market, { region: state.region }, mode);
   const panel = $(`#${state.tab}`);
   panel.classList.remove('enter');
   void panel.offsetWidth; // restart the entrance animation
@@ -190,6 +202,7 @@ function toast(title, kind = 'ok', detail = '') {
 function openConnect() {
   const cfg = loadAirtableConfig();
   $('#cx-base').value = cfg?.baseId || DEFAULT_BASE_ID;
+  $('#cx-market').value = cfg ? cfg.marketBaseId || '' : DEFAULT_MARKET_BASE_ID;
   $('#cx-token').value = '';
   $('#cx-token').required = !cfg;
   $('#cx-disconnect').hidden = !cfg;
@@ -200,7 +213,11 @@ function openConnect() {
 async function submitConnect(e) {
   e.preventDefault();
   const current = loadAirtableConfig();
-  const cfg = { baseId: $('#cx-base').value.trim(), token: $('#cx-token').value.trim() || current?.token };
+  const cfg = {
+    baseId: $('#cx-base').value.trim(),
+    marketBaseId: $('#cx-market').value.trim() || null,
+    token: $('#cx-token').value.trim() || current?.token,
+  };
   if (!cfg.token) return;
   const btn = $('#cx-submit');
   btn.disabled = true;
@@ -265,13 +282,16 @@ function wire() {
   for (const btn of document.querySelectorAll('[role="tab"]')) {
     btn.addEventListener('click', () => {
       state.tab = btn.dataset.tab;
-      history.replaceState(null, '', state.tab === 'today' ? '#today' : '#');
+      history.replaceState(null, '', state.tab === 'overview' ? '#' : `#${state.tab}`);
       render('static');
     });
   }
   $('.tabs').addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    const next = document.querySelector('[role="tab"]:not([aria-selected="true"])');
+    // Visual direction flips in RTL.
+    const step = (e.key === 'ArrowRight') !== (document.dir === 'rtl') ? 1 : -1;
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    const next = tabs[(tabs.findIndex((b) => b.dataset.tab === state.tab) + step + tabs.length) % tabs.length];
     next.focus();
     next.click();
   });
@@ -283,6 +303,14 @@ function wire() {
     if (!state.loading) setSyncState(state.failed ? 'offline' : 'live');
   });
   $('#refresh-now').addEventListener('click', () => refresh({ manual: true }));
+
+  for (const btn of document.querySelectorAll('[data-region]')) {
+    btn.addEventListener('click', () => {
+      state.region = btn.dataset.region;
+      writeStore(STORE.region, state.region);
+      render('static');
+    });
+  }
 
   $('#source-badge').addEventListener('click', () => { if (getMode() === 'browser') openConnect(); });
   $('#banner-connect').addEventListener('click', openConnect);

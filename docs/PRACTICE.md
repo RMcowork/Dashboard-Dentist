@@ -37,12 +37,19 @@ How we build and change this project. The short version is in `CLAUDE.md`.
   3. If it should work on GitHub Pages too, add it to `public/js/data/source.js` (browser mode).
   4. Document it in SPEC §6 and add a round-trip or fixture test.
 
+## Scrapers (Apify)
+- Scraping runs only in `scripts/collect-trends.js` (GitHub Actions), never in the dashboard or on page load.
+- Normalize Apify output in `public/js/data/market-schema.js` and cover it with fixture tests; treat every field as optional.
+- Refuse to write when a run returns nothing usable, and never delete records: a failed day keeps yesterday's data.
+- Keep runs cheap: no reviews or images from Google Maps, a fixed `maxPlaces`, one comparison per region for Google Trends.
+
 ## Secrets & configuration
 - Configuration lives only in environment variables or `.env` (git-ignored). `.env.example` lists every variable and must be kept current.
 - Airtable tokens: use the **least scope** needed and restrict them to the one base.
   - The dashboard needs only `data.records:read`.
   - Seeding needs write and schema scopes. Consider a separate token that you delete afterwards.
 - Never print a token, and never put one in a URL, a client bundle or a test fixture.
+- The collector's tokens (`APIFY_TOKEN`, `AIRTABLE_MARKET_TOKEN`, write access to the market base only) live in GitHub Actions secrets, or in `.env` for a manual run.
 - **Browser mode (GitHub Pages).** A static site cannot keep a secret, so nothing secret is built into it. Each viewer pastes their own token into *Connect Airtable*:
   - It must be read-only (`data.records:read`) and scoped to one base.
   - It is stored only in that browser's localStorage and sent only to `api.airtable.com`. Everything on the same origin (`<user>.github.io`, including other Pages sites of that account) can read localStorage, so never use a write-scoped token there, and disconnect on shared computers.

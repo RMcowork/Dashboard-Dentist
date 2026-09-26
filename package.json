@@ -11,6 +11,7 @@
     "start": "node server/serve.js",
     "generate": "node scripts/generate-demo.js",
     "seed": "node scripts/seed-airtable.js",
-    "test": "node --test"
+    "test": "node --test",
+    "collect": "node scripts/collect-trends.js"
   }
 }

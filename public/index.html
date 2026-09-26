@@ -32,6 +32,7 @@
     <nav class="tabs" role="tablist">
       <button role="tab" id="tab-overview" aria-controls="overview" data-tab="overview"><span data-icon="overview"></span><span data-i18n="tab.overview">Overview</span></button>
       <button role="tab" id="tab-today" aria-controls="today" data-tab="today"><span data-icon="today"></span><span data-i18n="tab.today">Front desk</span></button>
+      <button role="tab" id="tab-market" aria-controls="market" data-tab="market"><span data-icon="market"></span><span data-i18n="tab.market">Market</span></button>
     </nav>
 
     <div class="actions">
@@ -164,6 +165,52 @@
       </article>
     </div>
   </section>
+
+  <!-- ===== Market (dental trends + nearby clinics, via Apify → Airtable) ===== -->
+  <section id="market" class="panel" role="tabpanel" aria-labelledby="tab-market" hidden>
+    <div class="market-bar">
+      <div class="seg" role="group" data-i18n-aria="market.region">
+        <button type="button" data-region="IL" aria-pressed="true" data-i18n="region.IL">Israel</button>
+        <button type="button" data-region="Worldwide" aria-pressed="false" data-i18n="region.Worldwide">Worldwide</button>
+      </div>
+      <p id="market-source" class="market-source muted small"></p>
+    </div>
+    <div id="market-note" class="banner" hidden><span data-icon="bell"></span><span></span></div>
+
+    <h2 class="section-title" data-i18n="market.searchTitle">Search interest</h2>
+    <div id="topic-grid" class="kpi-grid topic-grid"></div>
+
+    <div class="chart-grid market-grid">
+      <article class="card chart-card wide" data-chart="interest">
+        <header class="card-head">
+          <div><h3 data-i18n="market.interestTitle">Search interest over time</h3><p class="card-sub" data-i18n="market.interestNote"></p></div>
+          <button class="toggle-table chip-btn" type="button" data-i18n="chart.showTable">Table</button>
+        </header>
+        <div class="chart-box tall"><canvas></canvas></div>
+        <div class="table-box" hidden><table class="data-table"></table></div>
+      </article>
+      <article class="card wide">
+        <header class="card-head"><div><h3 data-i18n="market.risingTitle">Rising searches</h3><p class="card-sub" data-i18n="market.risingNote"></p></div></header>
+        <div id="rising-list"></div>
+      </article>
+    </div>
+
+    <h2 class="section-title" data-i18n="market.competitorsTitle">Nearby clinics</h2>
+    <div class="team-grid">
+      <article class="card chart-card" data-chart="momentum">
+        <header class="card-head">
+          <div><h3 data-i18n="market.momentumTitle">Review momentum</h3><p class="card-sub" data-i18n="market.momentumNote"></p></div>
+          <button class="toggle-table chip-btn" type="button" data-i18n="chart.showTable">Table</button>
+        </header>
+        <div class="chart-box tall"><canvas></canvas></div>
+        <div class="table-box" hidden><table class="data-table"></table></div>
+      </article>
+      <article class="card">
+        <header class="card-head"><div><h3 data-i18n="market.tableTitle">Clinics on Google Maps</h3><p class="card-sub" id="competitor-note"></p></div></header>
+        <div class="table-scroll table-box-tall"><table id="competitor-table" class="data-table"></table></div>
+      </article>
+    </div>
+  </section>
 </main>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -178,6 +225,8 @@
     <p class="muted small" data-i18n="connect.intro"></p>
     <label class="field"><span data-i18n="connect.base">Base ID</span>
       <input id="cx-base" required pattern="app[A-Za-z0-9]{14}" spellcheck="false" autocomplete="off" dir="ltr"></label>
+    <label class="field"><span data-i18n="connect.marketBase">Market trends base ID (optional)</span>
+      <input id="cx-market" pattern="app[A-Za-z0-9]{14}" spellcheck="false" autocomplete="off" dir="ltr"></label>
     <label class="field"><span data-i18n="connect.token">Personal access token (read-only)</span>
       <input id="cx-token" type="password" required spellcheck="false" autocomplete="off" dir="ltr"></label>
     <p class="note small" data-i18n="connect.privacy"></p>

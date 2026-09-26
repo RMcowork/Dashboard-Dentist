@@ -69,6 +69,15 @@ A small private dental clinic (3 dentists, 3 chairs) keeps its schedule and bill
 - KPI cards two per row; charts full width.
 - Front desk: the day counts become one swipeable strip, and the chair grid is replaced by a time-ordered **agenda** (time, patient, treatment, dentist colour + chair, status), with a red *Now* divider when viewing today.
 
+### 3.4 Market
+- **Region toggle**: Israel / Worldwide (remembered per browser).
+- **Topic cards (5)**: dental implants, teeth whitening, clear aligners, veneers, braces. Latest weekly Google Trends score (0–100), change of the last 4 weeks vs the 4 weeks ending 13 weeks earlier, a 12-month sparkline and the search term used.
+- **Search interest over time**: one line per topic, colour fixed per topic, 12 months weekly, with a table toggle. Values share one scale per region (one Google Trends comparison).
+- **Rising searches**: up to 8 related searches with the biggest growth (*Breakout* first), tagged with their topic.
+- **Nearby clinics**: review momentum (new Google reviews in the last 30 days, top 10) and a table of all clinics (rating, reviews, +30 days) linking to Google Maps.
+- A source line (*Google Trends & Google Maps via Apify → Airtable* or *Demo market data*) with the collection time; a note when the base is empty or unreadable.
+- Data: `docs/MARKET.md`. Collected daily; read at most every 10 minutes.
+
 ## 4. KPI definitions
 Implemented in `public/js/metrics.js` and tested in `test/metrics.test.js`. The period is `[from, to]`, inclusive, on appointment `date`.
 
@@ -117,6 +126,7 @@ Payments are folded into appointments (`paid`, `paymentMethod`) to stay under th
 | `demo` | Generated in memory by `public/js/data/generate.js`, anchored to the real current date and time, so the Front desk tab always looks live. Deterministic for a given day. |
 | `airtable` | Reads the four tables through the REST API on the server: a full load every `AIRTABLE_FULL_SYNC_MINUTES` (30), delta syncs of changed records in between, and at most one sync per `AIRTABLE_MIN_INTERVAL_SECONDS` (15). The token never reaches the browser. |
 | *browser mode* | Static hosting (GitHub Pages), no server. Demo data is generated in the browser; **Connect Airtable** reads the base directly with the viewer's own read-only token (kept in their localStorage), using the same sync rules. Chosen automatically when `api/data` doesn't exist. |
+| *market* | `GET /api/market` (server) or a direct read (browser mode) of the *Dental Market Trends* base, filled daily by `scripts/collect-trends.js` from Apify. Demo market data when not configured. |
 | *future* | CSV import, or a practice-management system export. Add an adapter that returns the same shape. |
 
 Demo volume, sized for the free plan:

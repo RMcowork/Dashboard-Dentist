@@ -16,6 +16,12 @@ What the dashboard does for the people who run a clinic. For the exact screens a
   - Patients due for a recall (no visit in over 6 months and nothing booked), which brings back patients who would otherwise drift away.
 - Phone numbers are tap-to-call.
 
+## Knowing the market
+- **What patients are searching for:** weekly Google search interest in Israel and worldwide for implants, whitening, clear aligners, veneers and braces, with the change over three months. Useful for timing campaigns and deciding which treatments to promote.
+- **Emerging demand:** the fastest-rising related searches (for example new treatment names or price questions) show what patients are starting to ask about.
+- **Local competition:** nearby clinics' Google ratings and how fast they gain reviews, so the clinic can see where it stands and whether its own review efforts keep pace.
+- Collected automatically every morning by Apify into Airtable; no manual research.
+
 ## Practical advantages
 - **Always current:** it refreshes automatically from Airtable, every minute by default, and highlights what changed.
 - **Works anywhere:** on a reception screen, a tablet or a phone. On a phone the schedule becomes a simple time-ordered list.
