@@ -62,6 +62,11 @@ A small private dental clinic (3 dentists, 3 chairs) keeps its schedule and bill
 - **Recalls due**: patients whose last completed visit was more than 6 months ago and who have nothing booked, most overdue first.
 - **Next day to confirm**: scheduled appointments on the next open day, with phone numbers.
 
+### Phones (≤ 600 px)
+- Compact two-row header (brand, language, theme / sync pill, source); tabs move to a bottom navigation bar.
+- KPI cards two per row; charts full width.
+- Front desk: the day counts become one swipeable strip, and the chair grid is replaced by a time-ordered **agenda** (time, patient, treatment, dentist colour + chair, status), with a red *Now* divider when viewing today.
+
 ## 4. KPI definitions
 Implemented in `public/js/metrics.js` and tested in `test/metrics.test.js`. The period is `[from, to]`, inclusive, on appointment `date`.
 

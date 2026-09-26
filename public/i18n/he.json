@@ -123,5 +123,6 @@
   "connect.error": "לא ניתן לקרוא את הבסיס: {message}",
   "toast.connected": "מחובר ל־Airtable",
   "toast.disconnected": "נותק, מוצגים נתוני הדגמה",
-  "source.click": "מקור הנתונים: לחצו כדי לחבר או לנתק את Airtable"
+  "source.click": "מקור הנתונים: לחצו כדי לחבר או לנתק את Airtable",
+  "today.now": "עכשיו"
 }

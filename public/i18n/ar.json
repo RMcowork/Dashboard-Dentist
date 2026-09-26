@@ -123,5 +123,6 @@
   "connect.error": "تعذّرت قراءة القاعدة: {message}",
   "toast.connected": "تم الربط مع Airtable",
   "toast.disconnected": "تم الفصل، يتم عرض بيانات تجريبية",
-  "source.click": "مصدر البيانات: انقر لربط Airtable أو فصله"
+  "source.click": "مصدر البيانات: انقر لربط Airtable أو فصله",
+  "today.now": "الآن"
 }

@@ -649,22 +649,94 @@ a[href^="tel:"] { white-space: nowrap; }
   .tabs { margin-inline-start: 0; order: 3; width: 100%; }
   .tabs button { flex: 1; justify-content: center; }
 }
+/* Agenda list: the phone version of the schedule grid (hidden on wider screens) */
+.agenda { display: none; list-style: none; margin: 0; padding: 0; flex-direction: column; gap: 8px; }
+.agenda-item {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: start;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--dentist);
+}
+.agenda-item.status-cancelled { opacity: .5; }
+.agenda-item.status-cancelled .appt-name { text-decoration: line-through; }
+.agenda-item.status-no_show { background: var(--bad-soft); }
+.agenda-item.status-in_chair { background: var(--accent-soft); }
+.agenda-item.flash { animation: flash 2.4s ease-out; }
+.agenda-time { display: flex; flex-direction: column; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.agenda-time strong { font-size: .92rem; }
+.agenda-time span { font-size: .72rem; color: var(--text-muted); }
+.agenda-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: .82rem; }
+.agenda-main .appt-name { font-size: .9rem; }
+.agenda-who { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; color: var(--text-muted); font-size: .74rem; }
+.agenda-who .avatar.sm { width: 20px; height: 20px; font-size: .56rem; }
+.agenda-now { display: flex; align-items: center; gap: 8px; color: var(--status-critical); font-size: .74rem; font-weight: 700; }
+.agenda-now::before, .agenda-now::after { content: ""; flex: 1; height: 2px; background: var(--status-critical); border-radius: 2px; }
+.agenda-now::before { flex: 0 0 8px; height: 8px; border-radius: 50%; }
+
 @media (max-width: 600px) {
-  .appbar { position: static; }
-  .appbar-inner { padding: 10px 16px; gap: 10px; }
+  /* Compact two-row header: brand + language + theme, then the sync pill + source.
+     .actions dissolves so its children can be ordered alongside the brand.
+     No backdrop-filter here: it would become the containing block of the fixed bottom tabs. */
+  .appbar { position: static; backdrop-filter: none; -webkit-backdrop-filter: none; background: transparent; }
+  .appbar-inner { padding: 10px 16px; gap: 8px; }
+  .actions { display: contents; }
+  .brand { order: 1; flex: 1 1 0; gap: 10px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; }
+  .logo .icon { width: 19px; height: 19px; }
+  .brand-name { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; }
+  .brand-text { overflow: hidden; }
+  #lang-select { order: 2; min-height: 34px; padding: 4px 10px; font-size: .82rem; }
+  #theme-toggle { order: 3; width: 34px; height: 34px; }
+  .sync { order: 4; flex: 1 0 62%; justify-content: space-between; }
+  .sync .bare-select { margin-inline-start: auto; }
+  #source-badge { order: 5; padding: 7px 9px; }
   .brand-sub, .sync-text .sync-ago, #source-text { display: none; }
-  .actions { gap: 6px; }
-  main { padding: 4px 16px 48px; }
-  .hero { padding: 18px 0 12px; }
+
+  /* Tabs become an app-style bottom navigation bar */
+  .tabs {
+    position: fixed; inset-inline: 0; bottom: 0; z-index: 55;
+    margin: 0; width: 100%; border-radius: 0; gap: 6px;
+    padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
+    background: var(--glass);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
+    border-block-start: 1px solid var(--border);
+  }
+  .tabs button { flex-direction: column; gap: 2px; padding: 6px; font-size: .74rem; border-radius: 12px; }
+  .tabs button .icon { width: 20px; height: 20px; }
+  .tabs button[aria-selected="true"] { color: var(--accent-ink); background: var(--accent-soft); box-shadow: none; }
+  .toast, [dir="rtl"] .toast { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); }
+
+  main { padding: 4px 16px calc(96px + env(safe-area-inset-bottom)); }
+  .banner { margin-top: 12px; font-size: .8rem; }
+  .hero { padding: 16px 0 12px; }
+  .hero h1 { font-size: 1.5rem; }
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .kpi { padding: 12px 12px 10px; }
   .kpi-value { font-size: 1.3rem; margin-top: 8px; }
   .kpi-icon { width: 28px; height: 28px; }
   .kpi h3 { font-size: .74rem; }
   .spark { width: calc(100% + 24px); height: 30px; margin: 8px -12px -10px; }
-  .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-box.tall { height: 240px; }
+  .chart-box { height: 220px; }
   .card { padding: 14px; }
-  .day-label { flex-basis: 100%; margin: 0; }
+
+  /* Front desk: counts as one swipeable strip, agenda instead of the chair grid */
+  .day-nav { gap: 8px; margin-bottom: 12px; }
+  .day-label { flex-basis: 100%; margin: 0; font-size: 1.05rem; }
+  .counts {
+    display: flex; overflow-x: auto; gap: 8px;
+    margin-inline: -16px; padding: 2px 16px 6px;
+    scroll-snap-type: x mandatory; scroll-padding-inline: 16px; scrollbar-width: none;
+  }
+  .counts::-webkit-scrollbar { display: none; }
+  .count { flex: 0 0 auto; min-width: 96px; padding: 8px 12px; scroll-snap-align: start; box-shadow: var(--shadow-sm); }
+  .count-dot { height: 28px; width: 8px; }
+  .count-n { font-size: 1.25rem; }
+  .sch-scroll { display: none; }
+  .agenda { display: flex; }
 }
 
 @media (prefers-reduced-motion: reduce) {

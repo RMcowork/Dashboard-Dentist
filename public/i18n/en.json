@@ -123,5 +123,6 @@
   "connect.error": "Could not read the base: {message}",
   "toast.connected": "Connected to Airtable",
   "toast.disconnected": "Disconnected, showing demo data",
-  "source.click": "Data source: click to connect or disconnect Airtable"
+  "source.click": "Data source: click to connect or disconnect Airtable",
+  "today.now": "Now"
 }

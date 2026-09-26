@@ -77,4 +77,4 @@ The keys and labels are defined in `server/schema.js`.
 - Patient data is sensitive (see PRACTICE → Privacy). The demo uses fictional names and `05x-555-xxxx` numbers.
 
 ## Verifying a UI change
-Start the `dental-dashboard` preview and check both tabs in **en, he and ar**, at mobile width and in dark mode. The console should be clean. The demo "today" follows the real clock, and the clinic is closed on Saturday. Use the day picker to view a weekday.
+Start the `dental-dashboard` preview and check both tabs in **en, he and ar**, at mobile width (375 px: bottom tab bar, agenda instead of the chair grid) and in dark mode. The console should be clean. The demo "today" follows the real clock, and the clinic is closed on Saturday. Use the day picker to view a weekday.

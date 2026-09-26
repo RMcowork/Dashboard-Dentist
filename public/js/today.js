@@ -80,7 +80,32 @@ function renderSchedule(box, data, day, appts, { patient, treatment, dentist }, 
     ${appts.length ? '' : `<p class="empty">${esc(t('today.noAppointments'))}</p>`}
     <div class="sch-scroll"><div class="sch-grid" style="--chairs:${chairs.length}; --rows:${rows}">
       ${header}${times.join('')}${blocks}${nowLine}
-    </div></div>`;
+    </div></div>
+    ${appts.length ? agendaHtml(appts, day, { patient, treatment, dentist }, changedIds) : ''}`;
+}
+
+// Phones: one time-ordered list instead of the chair grid (CSS shows one or the other).
+function agendaHtml(appts, day, { patient, treatment, dentist }, changedIds) {
+  const now = new Date();
+  const nowMin = day === todayStr() ? now.getHours() * 60 + now.getMinutes() : null;
+  let nowShown = nowMin === null;
+  const items = appts.map((a) => {
+    const start = timeToMin(a.start);
+    const den = dentist.get(a.dentistId);
+    const marker = !nowShown && start > nowMin
+      ? `<li class="agenda-now" aria-label="${esc(t('today.now'))}"><span>${esc(t('today.now'))} · ${minToTime(nowMin)}</span></li>` : '';
+    if (marker) nowShown = true;
+    return `${marker}<li class="agenda-item status-${a.status}${changedIds.has(a.id) ? ' flash' : ''}" style="--dentist:var(--series-${(den?.slot ?? 0) + 1})">
+      <span class="agenda-time"><strong>${esc(a.start)}</strong><span>${minToTime(start + a.duration)}</span></span>
+      <span class="agenda-main">
+        <span class="appt-name">${esc(patient.get(a.patientId)?.name ?? '—')}</span>
+        <span class="appt-trt">${esc(treatmentName(treatment.get(a.treatmentId)))}</span>
+        <span class="agenda-who"><span class="avatar sm" style="--c:var(--dentist)">${esc(initials(den?.name ?? '?'))}</span>${esc(t('today.chair', { n: a.chair }))}</span>
+      </span>
+      <span class="chip chip-${a.status}"><span aria-hidden="true">${STATUS_ICON[a.status]}</span> ${esc(t(`status.${a.status}`))}</span>
+    </li>`;
+  }).join('');
+  return `<ol class="agenda">${items}</ol>`;
 }
 
 function renderTomorrow(box, data, day, { patient, treatment, dentist }) {
