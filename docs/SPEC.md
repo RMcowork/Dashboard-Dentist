@@ -76,7 +76,7 @@ A small private dental clinic (3 dentists, 3 chairs) keeps its schedule and bill
 - **Rising searches**: up to 8 related searches with the biggest growth (*Breakout* first), tagged with their topic.
 - **Nearby clinics**: review momentum (new Google reviews in the last 30 days, top 10) and a table of all clinics (rating, reviews, +30 days) linking to Google Maps.
 - A source line (*Google Trends & Google Maps via Apify → Airtable* or *Demo market data*) with the collection time; a note when the base is empty or unreadable.
-- Data: `docs/MARKET.md`. Collected daily (Google Maps first, then Google Trends, each with a hard time limit); read at most every 10 minutes.
+- Data: `docs/MARKET.md`. Collected daily: Google Maps first, then one Google Trends comparison per region and optional per-term runs for rising searches, each with a hard time limit. Read at most every 10 minutes.
 
 ## 4. KPI definitions
 Implemented in `public/js/metrics.js` and tested in `test/metrics.test.js`. The period is `[from, to]`, inclusive, on appointment `date`.

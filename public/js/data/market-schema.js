@@ -125,12 +125,17 @@ function trendRecord(topicKey, regionKey, term, series, rising, updated) {
 
 const unixToDate = (t) => new Date(Number(t) * 1000).toISOString().slice(0, 10);
 
+const splitTerms = (text) => (text ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+
+// Which region and terms an item belongs to. Items from searchTerms runs carry the region
+// the collector tagged them with (`__geo`); items from Trends URLs carry it in the URL.
 function parseTrendsInput(item) {
+  const raw = item.inputUrlOrTerm ?? item.searchTerm ?? item.url ?? '';
   try {
-    const url = new URL(item.inputUrlOrTerm ?? item.url ?? '');
-    return { geo: url.searchParams.get('geo') ?? '', terms: (url.searchParams.get('q') ?? '').split(',').map((s) => s.trim()).filter(Boolean) };
+    const url = new URL(raw);
+    return { geo: item.__geo ?? url.searchParams.get('geo') ?? '', terms: splitTerms(url.searchParams.get('q')) };
   } catch {
-    return { geo: null, terms: item.searchTerm ? [item.searchTerm] : [] };
+    return { geo: item.__geo ?? null, terms: splitTerms(raw) };
   }
 }
 
@@ -151,7 +156,7 @@ function risingFrom(item) {
 export function normalizeTrends(items, updated = new Date().toISOString(), config = MARKET) {
   const out = [];
   for (const region of config.regions) {
-    const regionItems = items.filter((it) => parseTrendsInput(it).geo === region.geo || (region.geo === '' && parseTrendsInput(it).geo === null));
+    const regionItems = items.filter((it) => (parseTrendsInput(it).geo ?? '') === region.geo);
     const terms = config.topics.map((tp) => tp.terms[region.key]);
     const comparison = regionItems.find((it) => parseTrendsInput(it).terms.length > 1);
     const timeline = comparison?.interestOverTime_timelineData ?? [];

@@ -9,7 +9,7 @@
 
 import { loadEnv, requireEnv } from '../server/env.js';
 import { listAll } from '../public/js/data/airtable-sync.js';
-import { MARKET, MARKET_BASE_ID, trendsUrl } from '../public/js/data/market-config.js';
+import { MARKET, MARKET_BASE_ID } from '../public/js/data/market-config.js';
 import {
   MARKET_TABLES, competitorFromRecord, competitorToFields, normalizePlaces, normalizeTrends, trendToFields,
 } from '../public/js/data/market-schema.js';
@@ -81,23 +81,44 @@ async function upsert(table, mergeOn, fieldsList) {
   }
 }
 
-async function collectTrends() {
-  console.log('Search trends (Google Trends)');
-  // Per region: one comparison URL (shared scale) + one URL per term (its rising queries).
-  const startUrls = MARKET.regions.flatMap((region) => {
-    const terms = MARKET.topics.map((tp) => tp.terms[region.key]);
-    return [trendsUrl(region.geo, terms), ...terms.map((term) => trendsUrl(region.geo, [term]))];
-  }).map((url) => ({ url }));
-  // Comparison URLs first: if the run is cut short, the shared-scale series are what matters most.
-  startUrls.sort((a, b) => b.url.split(',').length - a.url.split(',').length);
+// Google Trends through the actor's documented input (searchTerms + isMultiple), one run per
+// region, so each comparison is a single page load. Google often blocks bursts of Trends
+// pages, so the per-term runs for rising searches are optional: if they fail, the series
+// from the comparisons are still written.
+async function trendsRun(region, terms, { compare, timeoutSecs }) {
   const items = await runActor('apify/google-trends-scraper', {
-    startUrls,
+    searchTerms: compare ? [terms.join(',')] : terms,
+    isMultiple: compare,
+    ...(region.geo ? { geo: region.geo } : {}),
+    timeRange: MARKET.timeRange,
     maxItems: 0,
     skipDebugScreen: true,
-    maxConcurrency: 4,
+    maxConcurrency: 2,
     maxRequestRetries: 3,
     pageLoadTimeoutSecs: 90,
-  }, { timeoutSecs: 20 * 60 });
+  }, { timeoutSecs });
+  return items.map((it) => ({ ...it, __geo: region.geo }));
+}
+
+async function collectTrends() {
+  console.log('Search trends (Google Trends)');
+  const items = [];
+  for (const region of MARKET.regions) {
+    const terms = MARKET.topics.map((tp) => tp.terms[region.key]);
+    try {
+      items.push(...await trendsRun(region, terms, { compare: true, timeoutSecs: 8 * 60 }));
+    } catch (err) {
+      console.warn(`  ${region.key} comparison: ${err.message}`);
+    }
+  }
+  for (const region of MARKET.regions) {
+    const terms = MARKET.topics.map((tp) => tp.terms[region.key]);
+    try {
+      items.push(...await trendsRun(region, terms, { compare: false, timeoutSecs: 8 * 60 }));
+    } catch (err) {
+      console.warn(`  ${region.key} rising searches skipped: ${err.message}`);
+    }
+  }
   const trends = normalizeTrends(items);
   if (!trends.length) throw new Error('Google Trends returned no usable series; nothing written');
   for (const tr of trends) console.log(`  ${tr.key.padEnd(20)} latest ${tr.latest ?? '—'}  3m ${tr.change3m == null ? '—' : `${Math.round(tr.change3m * 100)}%`}  rising ${tr.rising.length}`);

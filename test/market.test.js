@@ -100,3 +100,25 @@ test('demo market data covers every topic and region and stays small', () => {
   assert.ok(competitors.length <= MARKET.competitors.maxPlaces);
   assert.ok(competitors.every((c) => c.history.at(-1).n === c.reviews));
 });
+
+test('normalizeTrends accepts searchTerms-run items tagged with their region', () => {
+  const [il, world] = MARKET.regions;
+  const ilTerms = MARKET.topics.map((tp) => tp.terms[il.key]);
+  const items = [
+    // comparison run: one item, the joined term string, one value per term
+    { __geo: il.geo, inputUrlOrTerm: ilTerms.join(','), interestOverTime_timelineData: timeline(20, (i) => ilTerms.map((_, k) => k + i)) },
+    // per-term run: rising searches only matter here
+    { __geo: il.geo, inputUrlOrTerm: ilTerms[2], interestOverTime_timelineData: timeline(20, () => [80]), relatedQueries_rising: [{ query: 'x', value: [120], formattedValue: ['+120%'] }] },
+    // worldwide single term without a comparison → its own series
+    { __geo: world.geo, searchTerm: MARKET.topics[0].terms[world.key], interestOverTime_timelineData: timeline(20, () => [42]) },
+  ];
+  const out = normalizeTrends(items);
+  const third = out.find((tr) => tr.key === `${MARKET.topics[2].key}|${il.key}`);
+  assert.equal(third.latest, 2 + 19); // comparison value, not the single run's 80
+  assert.equal(third.rising[0].label, '+120%');
+  assert.equal(out.filter((tr) => tr.region === il.key).length, MARKET.topics.length);
+  const worldFirst = out.find((tr) => tr.key === `${MARKET.topics[0].key}|${world.key}`);
+  assert.equal(worldFirst.latest, 42);
+  assert.equal(out.filter((tr) => tr.region === world.key).length, 1);
+});
+

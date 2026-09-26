@@ -22,7 +22,8 @@ Dashboard Market tab ◄────────┘  server: GET /api/market · 
 - **Separate base.** Market data lives in its own base, *Dental Market Trends* (`app4RLlYNfgYxgs7f`), so it never eats into the clinic base's 1,000-record free-plan limit. It stays small: 10 trend records (5 topics × 2 regions) plus one record per clinic (about 20).
 - **Search Trends** table: one record per topic+region (`Key` = `implants|IL`). `Series` holds the weekly values as JSON, and `Rising queries` the top related searches.
 - **Competitors** table: one record per Google Maps place (`Place ID`). Each run adds today's rating and review count to `History` (JSON, last 180 days); review momentum is computed from it.
-- **Comparable values.** All five topics of a region are requested together in one Google Trends comparison, so their numbers share a scale (100 = the busiest week of the most-searched topic in that region). Each term is also requested alone, for its rising searches.
+- **Comparable values.** All five topics of a region are requested together in one Google Trends comparison (the actor's `searchTerms` + `isMultiple` input, one run per region), so their numbers share a scale (100 = the busiest week of the most-searched topic in that region).
+- **Rising searches** come from a second, optional run per region with each term on its own. Google often blocks bursts of Trends pages; if this part fails, the series are still written and the rising list keeps its previous values.
 - **Reads are cheap.** The dashboard reads the 2 tables (2 API calls) at most once every 10 minutes, whatever its refresh interval.
 
 ## What to track
@@ -68,7 +69,7 @@ npm run collect -- --dry-run
 
 ## Troubleshooting
 - **`Airtable Competitors: 403 … INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND`**: `AIRTABLE_MARKET_TOKEN` can't see the market base. Edit the token at <https://airtable.com/create/tokens>: scopes `data.records:read` and `data.records:write`, and under **Access** add *Dental Market Trends*. Nothing needs to change in GitHub if you edit the same token.
-- **Google Trends run is slow or times out.** Google Trends pages load slowly and Google sometimes rate-limits scrapers. Each Apify run has a hard limit (Trends 20 min, Maps 10 min) that Apify itself enforces, so a stuck run stops and doesn't keep spending credits. When the limit is hit, the collector keeps whatever was already scraped: the two comparison pages are requested first, so the chart and cards usually survive and only some rising searches are missing. It runs again the next morning.
+- **Google Trends run is slow or times out.** Google rate-limits Trends scrapers; the first version (12 Trends URLs in one run) got only 1 page through in 19 minutes. The collector now makes one comparison run per region (1 page each) and then optional per-term runs for rising searches, each with a hard 8-minute limit that Apify enforces (Maps: 10 min). A stuck run stops on its own and doesn't keep spending credits; partial results are kept. It runs again the next morning.
 - **A run failed in Actions.** Open *Actions → Collect market trends → the run → Collect* for the log; every part prints ✓ or ✗ with the reason. The other part still runs, and existing records are never deleted.
 
 ## Caveats
