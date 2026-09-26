@@ -6,8 +6,11 @@ A dashboard for a small dental clinic, in English, עברית and العربية
   - Revenue, collections, visits, new patients, no-show rate, chair utilization, average revenue per visit and outstanding balance, each compared with the previous period
   - Trends, treatment mix and dentist performance
 - **Front desk**:
-  - The day's schedule by chair, with live statuses
+  - The day's schedule by chair (a time-ordered agenda on phones), with live statuses
   - Unpaid balances, recalls due and next-day confirmations
+- **Live refresh**: every 1 minute by default (Off, 15 s … 15 min selectable), with a visible loading/refresh animation and highlights of what changed
+- **Works on phones**: compact header, bottom tab bar, swipeable counters, agenda view
+- Light and dark themes; right-to-left layout for Hebrew and Arabic
 
 It runs on generated **demo data** out of the box, and reads from **Airtable** when configured.
 
@@ -60,5 +63,6 @@ npm test
 | [docs/SPEC.md](docs/SPEC.md) | Product spec: users, screens, exact KPI formulas, roadmap |
 | [docs/PRACTICE.md](docs/PRACTICE.md) | Engineering practice: style, adapters, secrets, privacy, i18n/RTL, charts, testing |
 | [docs/AIRTABLE.md](docs/AIRTABLE.md) | Base schema, tokens, sync & free-plan limits, GitHub Pages connection, real data |
+| [CHANGELOG.md](CHANGELOG.md) | What changed in each version |
 
 All names and phone numbers in the demo data are fictional.

@@ -8,13 +8,14 @@ How we build and change this project. The short version is in `CLAUDE.md`.
 
    | Concern | Lives in |
    |---|---|
-   | Data model and Airtable mapping | `server/schema.js` |
+   | Data model and Airtable mapping | `public/js/data/schema.js` |
+   | Airtable sync (server and browser) | `public/js/data/airtable-sync.js` |
    | KPI maths | `public/js/metrics.js` |
    | Dates and opening hours | `public/js/dates.js` |
    | Strings | `public/i18n/*.json` |
    | Colours | CSS tokens in `public/style.css` |
 
-3. **Pure core, thin shell.** `metrics.js` and `dates.js` take plain data and return plain data. They don't touch the DOM or do I/O, so the same code runs in the browser and in `node --test`.
+3. **Pure core, thin shell.** `metrics.js`, `dates.js` and `public/js/data/*` (except `source.js`) take plain data and return plain data. They don't touch the DOM or do I/O, so the same code runs in the browser and in `node --test`.
 4. **Read-only UI.** The dashboard never writes to a data source. Seeding is a separate, explicit script.
 
 ## Code style
@@ -31,10 +32,10 @@ How we build and change this project. The short version is in `CLAUDE.md`.
   - Airtable: 5 requests/second per base
   - Free plan: about 1,000 API calls/month
 - To add a source:
-  1. Create `server/adapters/<name>.js`.
-  2. Register it in `ADAPTERS` in `serve.js`.
-  3. Document it in SPEC §6.
-  4. Add a round-trip or fixture test.
+  1. Put the reading/normalizing logic in `public/js/data/<name>.js` (no Node or DOM APIs) so both modes can use it.
+  2. Wrap it in `server/adapters/<name>.js` and register it in `ADAPTERS` in `serve.js`.
+  3. If it should work on GitHub Pages too, add it to `public/js/data/source.js` (browser mode).
+  4. Document it in SPEC §6 and add a round-trip or fixture test.
 
 ## Secrets & configuration
 - Configuration lives only in environment variables or `.env` (git-ignored). `.env.example` lists every variable and must be kept current.
@@ -84,10 +85,10 @@ We follow the dataviz method: form first, colour last. The rules:
   - A KPI formula → a fixture-based assertion, with the numbers worked out by hand in a comment
   - The generator → the determinism and record-budget test stays green
   - The schema → the round-trip test (normalized → Airtable → normalized) stays green
-- UI changes are verified in the preview (`.claude/launch.json` → `dental-dashboard`):
+- UI changes are verified in the preview (`.claude/launch.json` → `dental-dashboard`, and `dental-static` for browser mode):
   - Both tabs
   - en, he and ar
-  - 375 px width
+  - 375 px width (bottom tab bar, agenda) and 768 px (chair grid)
   - Dark mode
   - A clean console
 
@@ -95,3 +96,4 @@ We follow the dataviz method: form first, colour last. The rules:
 - Branch from `main`; keep changes small and focused.
 - Commit messages are imperative ("Add recall list to front desk"), with a body explaining *why* when it isn't obvious.
 - Never commit `.env`, `data/demo.json` or real data.
+- Pushing to `main` deploys GitHub Pages (tests must pass first). Note user-visible changes in `CHANGELOG.md`.

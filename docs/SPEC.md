@@ -27,10 +27,12 @@ A small private dental clinic (3 dentists, 3 chairs) keeps its schedule and bill
 ## 3. Screens
 
 ### 3.1 Header (both tabs)
-- Title and subtitle
-- A **data source badge**: *Demo data* or *Airtable*
-- A **language selector**: English / עברית / العربية. The choice is remembered per browser.
-- Tabs: Overview · Front desk. `#today` in the URL opens Front desk.
+- Clinic name and logo; a greeting and today's date above the content
+- A **sync pill**: status (*Live / Syncing / Offline / Paused*), "Updated X ago", a countdown ring, the refresh-interval selector and ↻ (see *Live refresh*)
+- A **data source badge**: *Demo data* or *Airtable · live*. In browser mode it opens the *Connect Airtable* dialog.
+- A **language selector**: English / עברית / العربية, and a light/dark **theme toggle**. Both are remembered per browser.
+- Tabs: Overview · Front desk. `#today` in the URL opens Front desk. On phones the tabs are a bottom bar.
+- A **demo banner** while showing demo data (in browser mode with a *Connect Airtable* button).
 
 ### 3.2 Overview
 - **Period selector**: last 7 days · last 28 days (default) · this month · last month · last 90 days · custom from/to. Every KPI compares with the **previous period of equal length**, ending the day before the period starts.
@@ -100,7 +102,7 @@ Other rules:
 The week starts on Sunday.
 
 ## 5. Data model
-There are four tables, described in `server/schema.js`; see `docs/AIRTABLE.md` for field types.
+There are four tables, described in `public/js/data/schema.js`; see `docs/AIRTABLE.md` for field types.
 - **Dentists**: name, specialty, chair, active
 - **Treatments**: name in en/he/ar, category, price ₪, duration in minutes
 - **Patients**: name, phone, birth date, gender, city, preferred language, first visit, last visit

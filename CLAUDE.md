@@ -23,7 +23,9 @@ npm test             # node --test: KPI formulas, generator, Airtable mapping
 npm run generate     # write data/demo.json (snapshot to seed Airtable with)
 npm run seed         # upload data/demo.json to AIRTABLE_BASE_ID (add --reset to replace; the demo base is already seeded)
 ```
-The preview config lives in `.claude/launch.json` (name `dental-dashboard`, port 8940).
+Preview configs live in `.claude/launch.json`: `dental-dashboard` (server mode, port 8940) and `dental-static` (browser mode, port 8941).
+
+The live site is <https://rmcowork.github.io/Dashboard-Dentist/> (repo `RMcowork/Dashboard-Dentist`); every push to `main` redeploys it.
 
 ## Layout
 ```
@@ -36,17 +38,21 @@ public/js/data/airtable-sync.js  Airtable reader: full/delta sync, coalescing, s
 public/js/data/demo-source.js    demo data cached per minute (Node + browser)
 public/js/data/source.js   browser data layer: server mode (api/data) or browser mode (static hosting)
 public/index.html          markup; strings carry data-i18n keys; Connect Airtable dialog
-public/js/app.js           state, refresh cycle, wiring
-.github/workflows/pages.yml  test + publish public/ to GitHub Pages
+public/js/app.js           state, refresh cycle, connect dialog, wiring
 public/js/metrics.js       PURE KPI functions (shared with Node tests)
 public/js/dates.js         date helpers + clinic opening hours (shared with Node)
 public/js/overview.js      Overview tab
 public/js/today.js         Front-desk tab
 public/js/charts.js        Chart.js wrapper (tokens from CSS, RTL axes)
 public/js/i18n.js          t(), setLang(), Intl formatters
+public/js/icons.js         inline SVG icons
+public/js/dom.js           esc(), tableHtml(), initials()
+public/style.css           tokens (light/dark, palette, fonts), components, phone layout (≤ 600 px)
 public/i18n/{en,he,ar}.json
 scripts/                   generate-demo.js, seed-airtable.js
-docs/                      SPEC.md, PRACTICE.md, AIRTABLE.md
+test/                      metrics, schema round-trip, Airtable sync (mocked fetch)
+.github/workflows/pages.yml  test + publish public/ to GitHub Pages
+docs/                      SPEC.md, PRACTICE.md, AIRTABLE.md; CHANGELOG.md at the root
 ```
 
 ## The normalized data shape (the adapter contract)
@@ -62,7 +68,7 @@ docs/                      SPEC.md, PRACTICE.md, AIRTABLE.md
 - `status` ∈ `scheduled | checked_in | in_chair | completed | no_show | cancelled`
 - `category` ∈ `preventive | restorative | endo | ortho | cosmetic | surgery`
 
-The keys and labels are defined in `server/schema.js`.
+The keys and labels are defined in `public/js/data/schema.js`.
 
 ## Rules that matter
 - **Secrets stay out of the repo and the build.** In server mode `AIRTABLE_TOKEN` stays on the server; never send it to the browser, log it, or commit `.env`. In browser mode (GitHub Pages) the viewer's own read-only token lives only in their localStorage (`dental-dash.airtable`) and goes only to `api.airtable.com`. Never add a token to `public/`, the workflow, or a Pages build.
@@ -72,8 +78,9 @@ The keys and labels are defined in `server/schema.js`.
 - **Escape data before `innerHTML`**: use `esc()` from `public/js/dom.js`.
 - **Dentist colour = categorical slot by chair order** (`--series-N`). Don't cycle or invent colours. See PRACTICE → Charts.
 - Demo data must stay **under 1,000 records**, the Airtable free-plan base limit. A test enforces this.
-- The Airtable free plan also has only ~1,000 API calls/month. The adapter delta-syncs (only changed records between full loads), coalesces concurrent requests and enforces `AIRTABLE_MIN_INTERVAL_SECONDS`. Keep those protections when you touch `server/adapters/airtable.js`.
+- The Airtable free plan also has only ~1,000 API calls/month. The adapter delta-syncs (only changed records between full loads), coalesces concurrent requests and enforces `AIRTABLE_MIN_INTERVAL_SECONDS`. Keep those protections when you touch `public/js/data/airtable-sync.js`.
 - **Refresh cycle** (`public/js/app.js`): the user picks the interval (Off, 15 s … 15 min, default 1 min, stored in localStorage). Every refresh shows the loading state for at least 900 ms, then re-renders with count-up, changed-card glow and a toast. Refreshing pauses while the browser tab is hidden.
+- **Phone layout** (≤ 600 px) is CSS-only except the agenda list, which `today.js` renders next to the chair grid; CSS shows one or the other. Don't put `backdrop-filter`/`transform` on ancestors of the fixed bottom tab bar.
 - Patient data is sensitive (see PRACTICE → Privacy). The demo uses fictional names and `05x-555-xxxx` numbers.
 
 ## Verifying a UI change

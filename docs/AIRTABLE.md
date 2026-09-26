@@ -8,7 +8,7 @@
 The base was created with the schema below and is already filled with the generated demo data (874 records).
 
 ## Schema
-Defined in code in `server/schema.js`, which is the source of truth. `scripts/seed-airtable.js` creates any table or field that is missing.
+Defined in code in `public/js/data/schema.js`, which is the source of truth. `scripts/seed-airtable.js` creates any table or field that is missing.
 
 ### Dentists
 | Field | Type | Key |
@@ -100,16 +100,16 @@ npm run seed -- --reset
   - **Coalescing:** concurrent browser requests share one in-flight sync, and syncs closer than `AIRTABLE_MIN_INTERVAL_SECONDS` (default 15) return the cached result.
   - **Stale fallback:** if Airtable fails after a good sync, the last data is served, and the UI shows *Offline* with a warning toast.
   - The browser pauses refreshing while its tab is hidden.
-  - Rough budget at the default 1-minute refresh: ~2 calls/min, or ~120 calls per open hour. On the free plan, choose 5 or 15 minutes for screens that stay open all day. The badge tooltip shows calls used since server start.
+  - Rough budget at the default 1-minute refresh: ~2 calls/min, or ~120 calls per open hour. On the free plan, choose 5 or 15 minutes for screens that stay open all day. The badge tooltip shows calls used since the server started (server mode) or since the page loaded (browser mode).
 - **5 requests per second per base.** Both the adapter and the seed script are sequential.
 
 ## Connecting a real clinic base
 Pick whichever of these fits:
 1. **Same schema.** Point `AIRTABLE_BASE_ID` at the new base. A read-only token (`data.records:read`) is enough.
-2. **Different names.** In `server/adapters/airtable.js`, fill in `TABLE_NAMES` and `FIELD_NAMES`. For example:
+2. **Different names.** In `server/adapters/airtable.js`, fill in `TABLE_NAMES` and `FIELD_NAMES` (server mode; browser mode assumes the demo schema's names). For example:
    ```js
    TABLE_NAMES.patients = 'Clients';
    FIELD_NAMES.appointments = { status: 'Visit status', fee: 'Price' };
    ```
-   Select options must use the labels above. Otherwise, extend `LABELS` in `server/schema.js`.
+   Select options must use the labels above. Otherwise, extend `LABELS` in `public/js/data/schema.js`.
 3. **Different structure**, such as a separate Payments table or a date-time start field. Write a new adapter that returns the normalized shape, following PRACTICE → Adapters.
