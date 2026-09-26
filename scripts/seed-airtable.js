@@ -11,7 +11,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, loadEnv, requireEnv } from '../server/env.js';
-import { TABLES, TABLE_ORDER, toAirtableFields } from '../server/schema.js';
+import { TABLES, TABLE_ORDER, toAirtableFields } from '../public/js/data/schema.js';
 import { listAll } from '../server/adapters/airtable.js';
 
 loadEnv();

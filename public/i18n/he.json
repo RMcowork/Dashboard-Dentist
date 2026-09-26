@@ -108,5 +108,20 @@
   "banner.demo": "מצב הדגמה: הוסיפו טוקן Airtable לקובץ ‎.env כדי להציג נתונים חיים.",
   "theme.toggle": "מצב כהה",
   "section.trends": "מגמות",
-  "section.team": "צוות"
+  "section.team": "צוות",
+  "banner.demoStatic": "מצב הדגמה: המספרים נוצרים בדפדפן שלך.",
+  "banner.connect": "חיבור ל־Airtable",
+  "connect.title": "חיבור ל־Airtable",
+  "connect.intro": "קריאת נתוני המרפאה ישירות מ־Airtable. צרו טוקן ב־airtable.com/create/tokens עם הרשאת data.records:read בלבד, מוגבל לבסיס שלכם.",
+  "connect.base": "מזהה בסיס (Base ID)",
+  "connect.token": "טוקן גישה אישי (קריאה בלבד)",
+  "connect.privacy": "הטוקן נשמר רק בדפדפן הזה ונשלח רק אל api.airtable.com. השתמשו בטוקן לקריאה בלבד והתנתקו במחשב משותף.",
+  "connect.submit": "התחברות",
+  "connect.cancel": "ביטול",
+  "connect.disconnect": "ניתוק",
+  "connect.testing": "בודק…",
+  "connect.error": "לא ניתן לקרוא את הבסיס: {message}",
+  "toast.connected": "מחובר ל־Airtable",
+  "toast.disconnected": "נותק, מוצגים נתוני הדגמה",
+  "source.click": "מקור הנתונים: לחצו כדי לחבר או לנתק את Airtable"
 }

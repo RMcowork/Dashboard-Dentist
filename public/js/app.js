@@ -5,6 +5,9 @@ import { LANGS, fmtAgo, fmtDate, fmtDuration, fmtNum, savedLang, setLang, t } fr
 import { PRESETS, presetRange, renderOverview } from './overview.js';
 import { renderToday } from './today.js';
 import { icon } from './icons.js';
+import {
+  DEFAULT_BASE_ID, getMode, loadAirtableConfig, loadData, saveAirtableConfig, testAirtable,
+} from './data/source.js';
 
 const INTERVALS = [0, 15, 30, 60, 120, 300, 900]; // seconds; 0 = off
 const DEFAULT_INTERVAL = 60;
@@ -45,9 +48,7 @@ function writeStore(key, value) {
 // ---------- data ----------
 
 async function fetchData(force) {
-  const res = await fetch(`/api/data${force ? '?force=1' : ''}`, { cache: 'no-store' });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error || res.statusText);
+  const body = await loadData({ force });
   // Chairs define dentist order, which fixes each dentist's colour slot everywhere.
   body.data.dentists.sort((a, b) => (a.chair ?? 99) - (b.chair ?? 99));
   return body;
@@ -137,9 +138,18 @@ function renderChrome() {
     badge.hidden = false;
     badge.dataset.source = state.source;
     $('#source-text').textContent = t(`source.${state.source}`);
-    badge.title = state.sync?.apiCallsTotal != null ? `Airtable API calls since server start: ${state.sync.apiCallsTotal}` : '';
+    const browser = getMode() === 'browser';
+    badge.disabled = !browser;
+    badge.classList.toggle('clickable', browser);
+    badge.title = [
+      browser ? t('source.click') : '',
+      state.sync?.apiCallsTotal != null ? `Airtable API calls: ${state.sync.apiCallsTotal}` : '',
+    ].filter(Boolean).join(' · ');
   }
+  const browser = getMode() === 'browser';
   $('#demo-banner').hidden = state.source !== 'demo' || state.airtableConfigured;
+  $('#banner-text').textContent = t(browser ? 'banner.demoStatic' : 'banner.demo');
+  $('#banner-connect').hidden = !browser;
 }
 
 function setSyncState(s) {
@@ -173,6 +183,43 @@ function toast(title, kind = 'ok', detail = '') {
   if (detail) el.querySelector('.toast-detail').textContent = detail;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ---------- Airtable connect dialog (browser mode only) ----------
+
+function openConnect() {
+  const cfg = loadAirtableConfig();
+  $('#cx-base').value = cfg?.baseId || DEFAULT_BASE_ID;
+  $('#cx-token').value = '';
+  $('#cx-token').required = !cfg;
+  $('#cx-disconnect').hidden = !cfg;
+  $('#cx-error').hidden = true;
+  $('#connect-dialog').showModal();
+}
+
+async function submitConnect(e) {
+  e.preventDefault();
+  const current = loadAirtableConfig();
+  const cfg = { baseId: $('#cx-base').value.trim(), token: $('#cx-token').value.trim() || current?.token };
+  if (!cfg.token) return;
+  const btn = $('#cx-submit');
+  btn.disabled = true;
+  btn.textContent = t('connect.testing');
+  try {
+    await testAirtable(cfg);
+    saveAirtableConfig(cfg);
+    state.data = null; // new source: render as a fresh load, not as "874 changes"
+    $('#connect-dialog').close();
+    toast(t('toast.connected'), 'ok');
+    await refresh({ manual: true });
+  } catch (err) {
+    const msg = $('#cx-error');
+    msg.hidden = false;
+    msg.textContent = t('connect.error', { message: err.message.replace(/\s+/g, ' ').slice(0, 160) });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('connect.submit');
+  }
 }
 
 // ---------- controls ----------
@@ -236,6 +283,18 @@ function wire() {
     if (!state.loading) setSyncState(state.failed ? 'offline' : 'live');
   });
   $('#refresh-now').addEventListener('click', () => refresh({ manual: true }));
+
+  $('#source-badge').addEventListener('click', () => { if (getMode() === 'browser') openConnect(); });
+  $('#banner-connect').addEventListener('click', openConnect);
+  $('#connect-form').addEventListener('submit', submitConnect);
+  $('#cx-cancel').addEventListener('click', () => $('#connect-dialog').close());
+  $('#cx-disconnect').addEventListener('click', async () => {
+    saveAirtableConfig(null);
+    state.data = null;
+    $('#connect-dialog').close();
+    toast(t('toast.disconnected'), 'warn');
+    await refresh({ manual: true });
+  });
 
   $('#theme-toggle').addEventListener('click', () => {
     const next = isDark() ? 'light' : 'dark';

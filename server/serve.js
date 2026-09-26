@@ -13,7 +13,9 @@ loadEnv();
 
 const ADAPTERS = { demo, airtable };
 const PUBLIC = join(ROOT, 'public');
-const PORT = Number(process.env.PORT) || 8940;
+// `--static` serves public/ only, with no API, the way GitHub Pages does (browser mode).
+const STATIC_ONLY = process.argv.includes('--static');
+const PORT = Number(process.argv.find((a) => a.startsWith('--port='))?.slice(7)) || Number(process.env.PORT) || 8940;
 const airtableConfigured = Boolean(process.env.AIRTABLE_TOKEN && process.env.AIRTABLE_BASE_ID);
 const requested = process.env.DATA_SOURCE || 'auto';
 const adapter = requested === 'auto' ? (airtableConfigured ? airtable : demo) : ADAPTERS[requested];
@@ -66,8 +68,8 @@ async function handleStatic(res, path) {
 http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const path = decodeURIComponent(url.pathname);
-  if (path.startsWith('/api/')) handleApi(req, res, path, url.searchParams);
+  if (path.startsWith('/api/') && !STATIC_ONLY) handleApi(req, res, path, url.searchParams);
   else handleStatic(res, path);
 }).listen(PORT, () => {
-  console.log(`Dental dashboard (${adapter.name} data) at http://localhost:${PORT}`);
+  console.log(`Dental dashboard (${STATIC_ONLY ? 'static, browser mode' : `${adapter.name} data`}) at http://localhost:${PORT}`);
 });

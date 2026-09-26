@@ -11,6 +11,17 @@ A dashboard for a small dental clinic, in English, עברית and العربية
 
 It runs on generated **demo data** out of the box, and reads from **Airtable** when configured.
 
+**Live demo:** <https://rmcowork.github.io/Dashboard-Dentist/>. It runs entirely in your browser; click **Connect Airtable** to read a base with your own read-only token.
+
+## Two ways to run it
+| | Server mode (`npm start`) | Browser mode (GitHub Pages / any static host) |
+|---|---|---|
+| Data | Node reads Airtable (or demo) and serves `/api/data` | The page generates demo data, or reads Airtable directly |
+| Airtable token | In `.env` on the server; never reaches the browser | Pasted by each viewer into **Connect Airtable**; saved only in that browser's localStorage and sent only to `api.airtable.com` |
+| Best for | A clinic screen / the clinic's real data | Demos, trying the dashboard, personal use |
+
+The page picks the mode by itself: if `api/data` exists it uses the server, otherwise browser mode. The Airtable sync code (`public/js/data/airtable-sync.js`) is the same in both.
+
 ## Quick start
 Requires Node ≥ 20. There's nothing to install.
 
@@ -34,6 +45,9 @@ The dashboard auto-refreshes every minute by default. Use the selector in the to
 
 To use a real clinic's data, see "Connecting a real clinic base" in [docs/AIRTABLE.md](docs/AIRTABLE.md).
 
+## GitHub Pages
+`.github/workflows/pages.yml` runs the tests and publishes `public/` on every push to `main`. No secret is built into the site. To run browser mode locally, use `node server/serve.js --static --port=8941`.
+
 ## Tests
 ```bash
 npm test
@@ -45,6 +59,6 @@ npm test
 | [CLAUDE.md](CLAUDE.md) | Orientation for contributors and Claude: layout, data contract, rules |
 | [docs/SPEC.md](docs/SPEC.md) | Product spec: users, screens, exact KPI formulas, roadmap |
 | [docs/PRACTICE.md](docs/PRACTICE.md) | Engineering practice: style, adapters, secrets, privacy, i18n/RTL, charts, testing |
-| [docs/AIRTABLE.md](docs/AIRTABLE.md) | Base schema, seeding, free-plan limits, connecting real data |
+| [docs/AIRTABLE.md](docs/AIRTABLE.md) | Base schema, tokens, sync & free-plan limits, GitHub Pages connection, real data |
 
 All names and phone numbers in the demo data are fictional.

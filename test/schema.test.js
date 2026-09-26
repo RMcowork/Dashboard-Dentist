@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TABLE_ORDER, fromAirtableRecord, toAirtableFields } from '../server/schema.js';
-import { generate } from '../server/demo/generate.js';
+import { TABLE_ORDER, fromAirtableRecord, toAirtableFields } from '../public/js/data/schema.js';
+import { generate } from '../public/js/data/generate.js';
 
 // What the seed script writes must read back identically through the Airtable adapter.
 test('normalized -> Airtable fields -> normalized is lossless', () => {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   computeKpis, previousPeriod, trend, categoryMix, byDentist, dayCounts, unpaidBalances, recallsDue,
 } from '../public/js/metrics.js';
-import { generate } from '../server/demo/generate.js';
+import { generate } from '../public/js/data/generate.js';
 
 // Hand-built fixture. 2026-09-20 is a Sunday (600 open min), 2026-09-25 a Friday (300 min).
 const fixture = {

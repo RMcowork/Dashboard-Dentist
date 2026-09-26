@@ -3,7 +3,7 @@
 
 import {
   addDays, CLINIC_HOURS, diffDays, eachDay, isOpen, minToTime, timeToMin, weekday,
-} from '../../public/js/dates.js';
+} from '../dates.js';
 
 export const DEFAULTS = {
   seed: 20260926,

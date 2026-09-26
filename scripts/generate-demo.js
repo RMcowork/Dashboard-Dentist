@@ -4,7 +4,7 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generate } from '../server/demo/generate.js';
+import { generate } from '../public/js/data/generate.js';
 import { todayStr } from '../public/js/dates.js';
 
 const AIRTABLE_FREE_LIMIT = 1000;

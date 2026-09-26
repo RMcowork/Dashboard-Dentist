@@ -107,8 +107,9 @@ Payments are folded into appointments (`paid`, `paymentMethod`) to stay under th
 | `DATA_SOURCE` | Behaviour |
 |---|---|
 | `auto` (default) | `airtable` when `AIRTABLE_TOKEN` and `AIRTABLE_BASE_ID` are set, otherwise `demo`. |
-| `demo` | Generated in memory by `server/demo/generate.js`, anchored to the real current date and time, so the Front desk tab always looks live. Deterministic for a given day. |
+| `demo` | Generated in memory by `public/js/data/generate.js`, anchored to the real current date and time, so the Front desk tab always looks live. Deterministic for a given day. |
 | `airtable` | Reads the four tables through the REST API on the server: a full load every `AIRTABLE_FULL_SYNC_MINUTES` (30), delta syncs of changed records in between, and at most one sync per `AIRTABLE_MIN_INTERVAL_SECONDS` (15). The token never reaches the browser. |
+| *browser mode* | Static hosting (GitHub Pages), no server. Demo data is generated in the browser; **Connect Airtable** reads the base directly with the viewer's own read-only token (kept in their localStorage), using the same sync rules. Chosen automatically when `api/data` doesn't exist. |
 | *future* | CSV import, or a practice-management system export. Add an adapter that returns the same shape. |
 
 Demo volume, sized for the free plan:
@@ -145,7 +146,7 @@ That comes to about 875 records, with about 8% no-shows, 5% cancellations, 18% o
 ## 9. Roadmap
 | Phase | Scope |
 |---|---|
-| **v0.1** (this) | Demo + Airtable read, two tabs, three languages |
+| **v0.1** (this) | Demo + Airtable read, two tabs, three languages, live refresh, GitHub Pages (browser mode) |
 | v0.2 | Real clinic base: field-name mapping, data-quality warnings (missing links, unknown statuses) |
 | v0.3 | Auth (at least a shared password or SSO in front of the server), audit of who viewed patient data |
 | v0.4 | Payments table (installments, insurance claims), per-dentist targets, CSV adapter |

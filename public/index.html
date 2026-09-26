@@ -46,7 +46,7 @@
         <select id="refresh-interval" class="bare-select" data-i18n-aria="sync.every"></select>
         <button type="button" id="refresh-now" class="icon-btn ghost" data-i18n-aria="sync.refreshNow" data-icon="refresh"></button>
       </div>
-      <span id="source-badge" class="badge" hidden><span data-icon="database"></span><span id="source-text"></span></span>
+      <button type="button" id="source-badge" class="badge" hidden><span data-icon="database"></span><span id="source-text"></span></button>
       <label class="visually-hidden" for="lang-select" data-i18n="lang.label">Language</label>
       <select id="lang-select" class="pill-select" data-i18n-aria="lang.label"></select>
       <button type="button" id="theme-toggle" class="icon-btn" data-i18n-aria="theme.toggle"><span class="i-sun" data-icon="sun"></span><span class="i-moon" data-icon="moon"></span></button>
@@ -55,7 +55,7 @@
 </header>
 
 <main>
-  <div id="demo-banner" class="banner" hidden><span data-icon="bell"></span><span data-i18n="banner.demo"></span></div>
+  <div id="demo-banner" class="banner" hidden><span data-icon="bell"></span><span id="banner-text"></span><button type="button" id="banner-connect" class="chip-btn" data-i18n="banner.connect" hidden>Connect Airtable</button></div>
 
   <section class="hero">
     <div>
@@ -167,5 +167,28 @@
 </main>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- Browser mode only (static hosting): connect this browser to an Airtable base -->
+<dialog id="connect-dialog" class="dialog" aria-labelledby="connect-title">
+  <form id="connect-form" method="dialog">
+    <header class="dialog-head">
+      <span class="kpi-icon" data-icon="database"></span>
+      <h2 id="connect-title" data-i18n="connect.title">Connect Airtable</h2>
+    </header>
+    <p class="muted small" data-i18n="connect.intro"></p>
+    <label class="field"><span data-i18n="connect.base">Base ID</span>
+      <input id="cx-base" required pattern="app[A-Za-z0-9]{14}" spellcheck="false" autocomplete="off" dir="ltr"></label>
+    <label class="field"><span data-i18n="connect.token">Personal access token (read-only)</span>
+      <input id="cx-token" type="password" required spellcheck="false" autocomplete="off" dir="ltr"></label>
+    <p class="note small" data-i18n="connect.privacy"></p>
+    <p id="cx-error" class="status-msg small" role="alert" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" id="cx-disconnect" class="chip-btn danger" data-i18n="connect.disconnect" hidden>Disconnect</button>
+      <span class="spacer"></span>
+      <button type="button" id="cx-cancel" class="chip-btn" data-i18n="connect.cancel">Cancel</button>
+      <button type="submit" id="cx-submit" class="primary-btn" data-i18n="connect.submit">Connect</button>
+    </div>
+  </form>
+</dialog>
 </body>
 </html>

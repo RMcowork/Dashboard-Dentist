@@ -42,6 +42,10 @@ How we build and change this project. The short version is in `CLAUDE.md`.
   - The dashboard needs only `data.records:read`.
   - Seeding needs write and schema scopes. Consider a separate token that you delete afterwards.
 - Never print a token, and never put one in a URL, a client bundle or a test fixture.
+- **Browser mode (GitHub Pages).** A static site cannot keep a secret, so nothing secret is built into it. Each viewer pastes their own token into *Connect Airtable*:
+  - It must be read-only (`data.records:read`) and scoped to one base.
+  - It is stored only in that browser's localStorage and sent only to `api.airtable.com`. Everything on the same origin (`<user>.github.io`, including other Pages sites of that account) can read localStorage, so never use a write-scoped token there, and disconnect on shared computers.
+  - Anyone with the token can read the whole base. For real patient data use server mode behind authentication instead.
 
 ## Privacy (patient data)
 Real clinic data is health data, which is sensitive under Israel's Privacy Protection Law and its data-security regulations.
@@ -71,6 +75,7 @@ We follow the dataviz method: form first, colour last. The rules:
 ## Security in the browser
 - Escape everything that comes from data with `esc()` before it goes into `innerHTML`. Prefer `textContent` for single values.
 - The static server rejects path traversal. Keep `PUBLIC + sep` checks if you touch it.
+- The only third-party endpoint the browser calls is `api.airtable.com` (browser mode), plus the pinned CDN and Google Fonts.
 - External scripts come only from pinned CDN versions (Chart.js `4.4.4` on jsDelivr).
 
 ## Testing

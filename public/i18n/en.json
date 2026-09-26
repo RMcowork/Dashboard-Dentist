@@ -108,5 +108,20 @@
   "banner.demo": "Demo mode: add your Airtable token to .env to show live data.",
   "theme.toggle": "Toggle dark mode",
   "section.trends": "Trends",
-  "section.team": "Team"
+  "section.team": "Team",
+  "banner.demoStatic": "Demo mode: these numbers are generated in your browser.",
+  "banner.connect": "Connect Airtable",
+  "connect.title": "Connect Airtable",
+  "connect.intro": "Read the clinic's data straight from Airtable. Create a token at airtable.com/create/tokens with only the data.records:read scope, limited to your base.",
+  "connect.base": "Base ID",
+  "connect.token": "Personal access token (read-only)",
+  "connect.privacy": "The token is saved only in this browser and sent only to api.airtable.com. Use a read-only token; disconnect on shared computers.",
+  "connect.submit": "Connect",
+  "connect.cancel": "Cancel",
+  "connect.disconnect": "Disconnect",
+  "connect.testing": "Checking…",
+  "connect.error": "Could not read the base: {message}",
+  "toast.connected": "Connected to Airtable",
+  "toast.disconnected": "Disconnected, showing demo data",
+  "source.click": "Data source: click to connect or disconnect Airtable"
 }

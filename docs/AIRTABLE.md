@@ -5,7 +5,7 @@
 - **Workspace:** Dashboard
 - **Base ID:** `appTRu3aSv38OmmGV`
 
-The base was created with the schema below. `npm run seed` fills it with the generated demo data.
+The base was created with the schema below and is already filled with the generated demo data (874 records).
 
 ## Schema
 Defined in code in `server/schema.js`, which is the source of truth. `scripts/seed-airtable.js` creates any table or field that is missing.
@@ -74,6 +74,14 @@ The demo base is already seeded, so you only need a **read-only** token:
 3. Restart the server. With `DATA_SOURCE=auto` it switches to Airtable, and the badge reads **Airtable · live**.
 
 The seeded data is anchored to **2026-09-26** (appointments from 2026-08-02 to 2026-10-09). Days pass but the Airtable data doesn't move. Re-seed when you want a fresh "today" (below).
+
+## Connecting from GitHub Pages (browser mode)
+The published site (<https://rmcowork.github.io/Dashboard-Dentist/>) has no server, so it reads Airtable directly from the browser:
+1. Open the site and click **Connect Airtable** (in the demo banner, or the source badge in the top bar).
+2. The Base ID is prefilled with the demo base. Paste a read-only token (`data.records:read`, only this base) and click **Connect**.
+3. The dashboard checks the token by reading the base, then switches to **Airtable · live**. Click the badge again to disconnect.
+
+Same sync rules as the server (full load every 30 min, delta syncs in between, at most one sync per 15 s), but the API calls are counted per open browser tab, not per server. The token is kept only in that browser's localStorage. See PRACTICE → Secrets for what that means.
 
 ## Re-seeding (optional)
 Needs a token with `data.records:read`, `data.records:write`, `schema.bases:read` and `schema.bases:write`. Consider a separate token that you delete afterwards.

@@ -18,6 +18,7 @@ The UI is English by default, with Hebrew and Arabic (RTL) selectable. Money is 
 ## Commands
 ```bash
 npm start            # http://localhost:8940  (DATA_SOURCE from .env, default auto)
+node server/serve.js --static --port=8941   # no API: browser mode, like GitHub Pages
 npm test             # node --test: KPI formulas, generator, Airtable mapping
 npm run generate     # write data/demo.json (snapshot to seed Airtable with)
 npm run seed         # upload data/demo.json to AIRTABLE_BASE_ID (add --reset to replace; the demo base is already seeded)
@@ -28,11 +29,15 @@ The preview config lives in `.claude/launch.json` (name `dental-dashboard`, port
 ```
 server/serve.js            static files + GET /api/data
 server/env.js              .env loader (no deps)
-server/schema.js           data model ↔ Airtable table/field/label mapping (single source of truth)
-server/adapters/*.js       demo | airtable; each exports name + getData() → normalized data
-server/demo/generate.js    deterministic demo generator (seeded RNG, anchored to "today")
-public/index.html          markup; strings carry data-i18n keys
-public/js/app.js           state, wiring, fetch
+server/adapters/*.js       demo | airtable; thin Node wrappers over public/js/data/*
+public/js/data/schema.js   data model ↔ Airtable table/field/label mapping (single source of truth)
+public/js/data/generate.js deterministic demo generator (seeded RNG, anchored to "today")
+public/js/data/airtable-sync.js  Airtable reader: full/delta sync, coalescing, stale (Node + browser)
+public/js/data/demo-source.js    demo data cached per minute (Node + browser)
+public/js/data/source.js   browser data layer: server mode (api/data) or browser mode (static hosting)
+public/index.html          markup; strings carry data-i18n keys; Connect Airtable dialog
+public/js/app.js           state, refresh cycle, wiring
+.github/workflows/pages.yml  test + publish public/ to GitHub Pages
 public/js/metrics.js       PURE KPI functions (shared with Node tests)
 public/js/dates.js         date helpers + clinic opening hours (shared with Node)
 public/js/overview.js      Overview tab
@@ -60,7 +65,8 @@ docs/                      SPEC.md, PRACTICE.md, AIRTABLE.md
 The keys and labels are defined in `server/schema.js`.
 
 ## Rules that matter
-- **Secrets stay server-side.** Never send `AIRTABLE_TOKEN` to the browser, log it, or commit `.env`.
+- **Secrets stay out of the repo and the build.** In server mode `AIRTABLE_TOKEN` stays on the server; never send it to the browser, log it, or commit `.env`. In browser mode (GitHub Pages) the viewer's own read-only token lives only in their localStorage (`dental-dash.airtable`) and goes only to `api.airtable.com`. Never add a token to `public/`, the workflow, or a Pages build.
+- **Code in `public/js/data/` runs in Node and the browser**: no Node APIs, no DOM (except `source.js`).
 - **KPI formulas live only in `metrics.js`** and are documented in `docs/SPEC.md`. If you change one, change both and update `test/metrics.test.js`.
 - **Every user-visible string goes through `t()`**, with the key added to all three JSON files. Use CSS logical properties (`margin-inline-start`, not `margin-left`) so RTL works.
 - **Escape data before `innerHTML`**: use `esc()` from `public/js/dom.js`.

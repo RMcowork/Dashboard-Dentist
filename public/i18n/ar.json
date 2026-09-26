@@ -108,5 +108,20 @@
   "banner.demo": "وضع تجريبي: أضف رمز Airtable إلى ملف ‎.env لعرض البيانات الحية.",
   "theme.toggle": "الوضع الداكن",
   "section.trends": "الاتجاهات",
-  "section.team": "الفريق"
+  "section.team": "الفريق",
+  "banner.demoStatic": "وضع تجريبي: هذه الأرقام مولَّدة في متصفحك.",
+  "banner.connect": "ربط Airtable",
+  "connect.title": "ربط Airtable",
+  "connect.intro": "اقرأ بيانات العيادة مباشرة من Airtable. أنشئ رمزًا في airtable.com/create/tokens بصلاحية data.records:read فقط، ومقيّدًا بقاعدتك.",
+  "connect.base": "معرّف القاعدة (Base ID)",
+  "connect.token": "رمز الوصول الشخصي (قراءة فقط)",
+  "connect.privacy": "يُحفظ الرمز في هذا المتصفح فقط ويُرسل إلى api.airtable.com فقط. استخدم رمزًا للقراءة فقط وافصل الاتصال على الأجهزة المشتركة.",
+  "connect.submit": "ربط",
+  "connect.cancel": "إلغاء",
+  "connect.disconnect": "فصل",
+  "connect.testing": "جارٍ التحقق…",
+  "connect.error": "تعذّرت قراءة القاعدة: {message}",
+  "toast.connected": "تم الربط مع Airtable",
+  "toast.disconnected": "تم الفصل، يتم عرض بيانات تجريبية",
+  "source.click": "مصدر البيانات: انقر لربط Airtable أو فصله"
 }
