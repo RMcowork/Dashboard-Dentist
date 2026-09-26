@@ -1,0 +1,16 @@
+{
+  "name": "dental-clinic-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dashboard for a dental clinic: owner overview + front-desk day view. Demo data, Airtable-backed.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/serve.js",
+    "generate": "node scripts/generate-demo.js",
+    "seed": "node scripts/seed-airtable.js",
+    "test": "node --test"
+  }
+}

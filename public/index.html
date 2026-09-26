@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dental Clinic Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <h1 data-i18n="app.title">Dental Clinic Dashboard</h1>
+    <p class="muted" data-i18n="app.subtitle">Practice overview and front desk</p>
+  </div>
+  <div class="topbar-controls">
+    <span id="source-badge" class="badge" hidden></span>
+    <label class="field">
+      <span class="visually-hidden" data-i18n="lang.label">Language</span>
+      <select id="lang-select" data-i18n-aria="lang.label"></select>
+    </label>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-overview" aria-controls="overview" data-tab="overview" data-i18n="tab.overview">Overview</button>
+    <button role="tab" id="tab-today" aria-controls="today" data-tab="today" data-i18n="tab.today">Front desk</button>
+  </nav>
+</header>
+
+<main>
+  <p id="status-msg" class="status-msg" role="status" data-i18n="loading">Loading…</p>
+
+  <!-- ===== Overview (owner / manager) ===== -->
+  <section id="overview" role="tabpanel" aria-labelledby="tab-overview" hidden>
+    <div class="filters">
+      <label class="field">
+        <span data-i18n="range.label">Period</span>
+        <select id="range-preset"></select>
+      </label>
+      <div id="custom-range" class="custom-range" hidden>
+        <label class="field"><span data-i18n="range.from">From</span><input type="date" id="range-from"></label>
+        <label class="field"><span data-i18n="range.to">To</span><input type="date" id="range-to"></label>
+      </div>
+      <span id="range-compare" class="muted"></span>
+    </div>
+
+    <div id="kpi-grid" class="kpi-grid"></div>
+
+    <div class="chart-grid">
+      <article class="card chart-card wide" data-chart="revenue">
+        <header class="card-head">
+          <div><h2 data-i18n="chart.revenueTrend">Revenue over time</h2><p class="muted small unit-note"></p></div>
+          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
+        </header>
+        <div class="chart-box"><canvas></canvas></div>
+        <div class="table-box" hidden><table class="data-table"></table></div>
+      </article>
+      <article class="card chart-card" data-chart="mix">
+        <header class="card-head">
+          <div><h2 data-i18n="chart.categoryMix">Revenue by treatment category</h2></div>
+          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
+        </header>
+        <div class="chart-box"><canvas></canvas></div>
+        <div class="table-box" hidden><table class="data-table"></table></div>
+      </article>
+      <article class="card chart-card" data-chart="dentists">
+        <header class="card-head">
+          <div><h2 data-i18n="chart.byDentist">Revenue by dentist</h2></div>
+          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
+        </header>
+        <div class="chart-box short"><canvas></canvas></div>
+        <div class="table-box" hidden><table class="data-table"></table></div>
+      </article>
+      <article class="card chart-card wide" data-chart="noshow">
+        <header class="card-head">
+          <div><h2 data-i18n="chart.noShowTrend">No-show rate over time</h2><p class="muted small unit-note"></p></div>
+          <button class="toggle-table" type="button" data-i18n="chart.showTable">Table</button>
+        </header>
+        <div class="chart-box"><canvas></canvas></div>
+        <div class="table-box" hidden><table class="data-table"></table></div>
+      </article>
+    </div>
+
+    <article class="card">
+      <h2 data-i18n="table.dentists">Dentist performance</h2>
+      <div class="table-scroll"><table id="dentist-table" class="data-table"></table></div>
+    </article>
+  </section>
+
+  <!-- ===== Front desk ===== -->
+  <section id="today" role="tabpanel" aria-labelledby="tab-today" hidden>
+    <div class="filters day-nav">
+      <button type="button" id="day-prev" class="icon-btn" data-i18n-aria="today.prev"><span class="flip" aria-hidden="true">‹</span></button>
+      <input type="date" id="day-input" data-i18n-aria="today.day">
+      <button type="button" id="day-next" class="icon-btn" data-i18n-aria="today.next"><span class="flip" aria-hidden="true">›</span></button>
+      <button type="button" id="day-today" data-i18n="today.today">Today</button>
+      <h2 id="day-label" class="day-label"></h2>
+    </div>
+
+    <div id="day-counts" class="counts"></div>
+
+    <div class="today-grid">
+      <article class="card schedule-card">
+        <h2 data-i18n="today.schedule">Schedule</h2>
+        <div id="schedule"></div>
+      </article>
+      <div class="side-lists">
+        <article class="card" id="unpaid">
+          <h3 data-i18n="today.unpaid">Unpaid balances</h3>
+          <div class="list-body"></div>
+        </article>
+        <article class="card" id="recalls">
+          <h3 data-i18n="today.recalls">Recalls due</h3>
+          <p class="muted small list-note"></p>
+          <div class="list-body"></div>
+        </article>
+      </div>
+      <article class="card wide" id="tomorrow">
+        <h3></h3>
+        <div class="list-body table-scroll"></div>
+      </article>
+    </div>
+  </section>
+</main>
+</body>
+</html>

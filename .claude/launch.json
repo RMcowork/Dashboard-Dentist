@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dental-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/serve.js"],
+      "port": 8940
+    }
+  ]
+}
