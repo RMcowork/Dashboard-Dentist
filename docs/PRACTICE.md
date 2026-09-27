@@ -42,7 +42,7 @@ How we build and change this project. The short version is in `CLAUDE.md`.
 - Normalize Apify output in `public/js/data/market-schema.js` and cover it with fixture tests; treat every field as optional.
 - Refuse to write when a run returns nothing usable, and never delete records: a failed day keeps yesterday's data.
 - Keep runs cheap: no reviews or images from Google Maps, a fixed `maxPlaces`, one comparison per region for Google Trends.
-- Use an actor's documented input (e.g. `searchTerms` + `isMultiple`) rather than start URLs, and keep each run to as few pages as possible: Google blocks bursts of Trends pages. Required data (series) and nice-to-have data (rising searches) go in separate runs so one can fail without the other.
+- Use an actor's documented input (e.g. `searchTerms` + `isMultiple`) rather than start URLs, and keep each run to as few pages as possible: Google blocks bursts of Trends pages. Required data (series) and nice-to-have data (rising searches) go in separate runs so one can fail without the other; switch off a nice-to-have run that keeps failing rather than paying for it daily.
 - Every Apify run gets a `timeout` passed to Apify (so a stuck run is stopped on Apify's side), and the collector aborts it if it overruns. Partial results are used rather than thrown away; order inputs so the most important pages come first.
 
 ## Secrets & configuration

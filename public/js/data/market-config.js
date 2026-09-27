@@ -8,6 +8,9 @@ export const MARKET = {
   // share a scale (100 = the busiest week of the busiest topic in that region). Max 5 topics.
   timeRange: 'today 12-m', // Trends URL form
   actorTimeRange: '', // apify/google-trends-scraper form: '' = past 12 months (its allowed values differ from the URL's)
+  // Per-term runs for "rising searches". Off by default: Google blocks them most days, and a
+  // blocked run still uses Apify compute until its time limit. Turn on to try again.
+  risingSearches: false,
   regions: [
     { key: 'IL', geo: 'IL' },
     { key: 'Worldwide', geo: '' },

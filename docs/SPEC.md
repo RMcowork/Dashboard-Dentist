@@ -73,7 +73,7 @@ A small private dental clinic (3 dentists, 3 chairs) keeps its schedule and bill
 - **Region toggle**: Israel / Worldwide (remembered per browser).
 - **Topic cards (5)**: dental implants, teeth whitening, clear aligners, veneers, braces. Latest weekly Google Trends score (0–100), change of the last 4 weeks vs the 4 weeks ending 13 weeks earlier, a 12-month sparkline and the search term used.
 - **Search interest over time**: one line per topic, colour fixed per topic, 12 months weekly, with a table toggle. Values share one scale per region (one Google Trends comparison).
-- **Rising searches**: up to 8 related searches with the biggest growth (*Breakout* first), tagged with their topic.
+- **Rising searches**: up to 8 related searches with the biggest growth (*Breakout* first), tagged with their topic. Collected only when `risingSearches` is on (off by default); otherwise the card shows *No rising searches yet* or the last collected list.
 - **Nearby clinics**: review momentum (new Google reviews in the last 30 days, top 10) and a table of all clinics (rating, reviews, +30 days) linking to Google Maps.
 - A source line (*Google Trends & Google Maps via Apify → Airtable* or *Demo market data*) with the collection time; a note when the base is empty or unreadable.
 - Data: `docs/MARKET.md`. Collected daily: Google Maps first, then one Google Trends comparison per region and optional per-term runs for rising searches, each with a hard time limit. Read at most every 10 minutes.

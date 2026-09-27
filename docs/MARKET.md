@@ -23,7 +23,8 @@ Dashboard Market tab ◄────────┘  server: GET /api/market · 
 - **Search Trends** table: one record per topic+region (`Key` = `implants|IL`). `Series` holds the weekly values as JSON, and `Rising queries` the top related searches.
 - **Competitors** table: one record per Google Maps place (`Place ID`). Each run adds today's rating and review count to `History` (JSON, last 180 days); review momentum is computed from it.
 - **Comparable values.** All five topics of a region are requested together in one Google Trends comparison (the actor's `searchTerms` + `isMultiple` input, one run per region), so their numbers share a scale (100 = the busiest week of the most-searched topic in that region).
-- **Rising searches** come from a second, optional run per region with each term on its own. Google often blocks bursts of Trends pages; if this part fails, the series are still written and the rising list keeps its previous values.
+- **Rising searches** come from optional per-term runs, **off by default** (`risingSearches: false` in `market-config.js`): in testing Google blocked them every time, and a blocked run still uses Apify compute until its 8-minute limit. Set it to `true` to try again; if it fails, the series are still written.
+- An empty comparison is retried once, since Google blocks Trends pages at random.
 - **Reads are cheap.** The dashboard reads the 2 tables (2 API calls) at most once every 10 minutes, whatever its refresh interval.
 
 ## What to track

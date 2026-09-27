@@ -105,13 +105,19 @@ async function collectTrends() {
   const items = [];
   for (const region of MARKET.regions) {
     const terms = MARKET.topics.map((tp) => tp.terms[region.key]);
-    try {
-      items.push(...await trendsRun(region, terms, { compare: true, timeoutSecs: 8 * 60 }));
-    } catch (err) {
-      console.warn(`  ${region.key} comparison: ${err.message}`);
+    // Google blocks Trends pages at random, so an empty comparison gets one more try.
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        const got = await trendsRun(region, terms, { compare: true, timeoutSecs: 8 * 60 });
+        items.push(...got);
+        if (got.length) break;
+        console.warn(`  ${region.key} comparison: no results (attempt ${attempt} of 2)`);
+      } catch (err) {
+        console.warn(`  ${region.key} comparison (attempt ${attempt} of 2): ${err.message}`);
+      }
     }
   }
-  for (const region of MARKET.regions) {
+  for (const region of MARKET.risingSearches ? MARKET.regions : []) {
     const terms = MARKET.topics.map((tp) => tp.terms[region.key]);
     try {
       items.push(...await trendsRun(region, terms, { compare: false, timeoutSecs: 8 * 60 }));

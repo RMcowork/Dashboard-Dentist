@@ -3,6 +3,8 @@
 ## 2026-09-27
 
 ### Market collector
+- Worldwide Google Trends now collects (5 topics). An empty comparison is retried once (Israel came back empty once).
+- Rising-search runs are off by default (`risingSearches` in market-config.js): Google blocked them each time and they used 8 min of Apify compute each.
 - Fix: the Trends actor accepts `timeRange: ''` for the past 12 months, not `today 12-m` (`actorTimeRange` in market-config.js).
 - Google Trends now uses the actor's documented `searchTerms` + `isMultiple` input: one comparison run per region (1 page each) instead of 12 URLs in one run, which Google mostly blocked. Rising searches come from separate, optional per-term runs.
 - First real collection: 20 nearby clinics saved; Trends saved 1 of 10 series before this change.
